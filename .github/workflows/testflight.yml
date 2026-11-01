@@ -39,8 +39,40 @@ jobs:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
         run: |
           KEY="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
-          printf '%s\n' "$ASC_KEY_P8" > "$KEY"
+          printf '%s\n' "$ASC_KEY_P8" | tr -d '\r' > "$KEY"
           echo "ASC_KEY_PATH=$KEY" >> "$GITHUB_ENV"
+
+      # Fails fast with a readable reason if the API key is wrong. Never prints secret values.
+      - name: Verify App Store Connect access
+        run: |
+          echo "Key ID format ok:    $([[ "$ASC_KEY_ID" =~ ^[A-Z0-9]{10}$ ]] && echo yes || echo NO - expected 10 uppercase letters/digits)"
+          echo "Issuer ID format ok: $([[ "$ASC_ISSUER_ID" =~ ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$ ]] && echo yes || echo NO - expected a lowercase UUID)"
+          echo "Team ID format ok:   $([[ "$APPLE_TEAM_ID" =~ ^[A-Z0-9]{10}$ ]] && echo yes || echo NO - expected 10 uppercase letters/digits)"
+          echo "Key file looks ok:   $(grep -q 'BEGIN PRIVATE KEY' "$ASC_KEY_PATH" && echo yes || echo NO - missing BEGIN PRIVATE KEY)"
+          node - <<'JS'
+          const crypto = require("crypto"), fs = require("fs");
+          const b64u = (b) => Buffer.from(b).toString("base64url");
+          const now = Math.floor(Date.now() / 1000);
+          const header = b64u(JSON.stringify({ alg: "ES256", kid: process.env.ASC_KEY_ID, typ: "JWT" }));
+          const claims = b64u(JSON.stringify({ iss: process.env.ASC_ISSUER_ID, iat: now, exp: now + 600, aud: "appstoreconnect-v1" }));
+          const sig = crypto.sign("sha256", Buffer.from(header + "." + claims),
+            { key: fs.readFileSync(process.env.ASC_KEY_PATH), dsaEncoding: "ieee-p1363" });
+          const jwt = header + "." + claims + "." + b64u(sig);
+          (async () => {
+            const res = await fetch("https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=im.nemix.ios",
+              { headers: { Authorization: "Bearer " + jwt } });
+            const body = await res.json().catch(() => ({}));
+            console.log("App Store Connect API status:", res.status);
+            if (!res.ok) {
+              for (const e of body.errors || []) console.log("  ", e.code, "-", e.title, "-", e.detail);
+              console.log("::error::App Store Connect API key was rejected (HTTP " + res.status + "). See the lines above.");
+              process.exit(1);
+            }
+            const n = (body.data || []).length;
+            console.log("App record for im.nemix.ios found:", n > 0 ? "yes" : "NO - create the app in App Store Connect first");
+            if (n === 0) process.exit(1);
+          })();
+          JS
 
       - name: Generate Xcode project
         run: |
