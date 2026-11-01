@@ -25,14 +25,14 @@ gh secret set ANDROID_KEY_ALIAS -R ShotaXiangtai/nemix -b nemix
 ### 3. リリースする
 
 1. `bitchat-android/app/build.gradle.kts` の `versionName` と `versionCode` を上げてコミット
-2. `versionName` と同じタグを push（例: `versionName = "0.1.0"` → `v0.1.0`。テスト版は `v0.1.0-beta.1`）
+2. `versionName` と同じタグを push（例: `versionName = "0.1.0"` → `v0.1.0`。ベータ版は `v0.1.0-beta.1`）
 
 ```sh
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
 [Android ワークフロー](../.github/workflows/android.yml) が署名済み APK をビルドし、GitHub Release に添付します。
-`-` を含むタグはプレリリースになります。サイトのダウンロードボタンは最新の正式リリースの
+`-beta` を含むタグはタイトルに「ベータ版」と付きます。ベータも通常のリリースとして公開されるので、サイトのボタンやアプリ内の更新確認から入手できます。サイトのダウンロードボタンは最新の正式リリースの
 `nemix-android-universal.apk` を指します。
 
 ## iOS（Mac なし）

@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "im.nemix.android",
+      "sha256_cert_fingerprints": [
+        "C8:75:28:0E:3B:85:7E:05:E8:0B:57:5E:B6:9A:C2:6D:A0:EB:85:47:FE:2E:5B:C6:80:02:18:E2:E1:D0:DE:B6"
+      ]
+    }
+  }
+]

@@ -134,8 +134,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          PRERELEASE=""
-          case "$TAG" in *-*) PRERELEASE="--prerelease" ;; esac
+          # Beta tags (v0.1.0-beta.1) are published as normal releases so that
+          # releases/latest (website button, in-app update check) points to them.
+          TITLE="nemix ${TAG}"
+          case "$TAG" in *-beta*) TITLE="nemix ${TAG}（ベータ版 / Beta）" ;; esac
           cat > "$RUNNER_TEMP/notes.md" <<EOF
           ## nemix for Android ${TAG}
 
@@ -152,4 +154,4 @@ jobs:
           EOF
           sed -i 's/^          //' "$RUNNER_TEMP/notes.md"
           gh release create "$TAG" "$RUNNER_TEMP"/out/* \
-            --title "nemix ${TAG}" --notes-file "$RUNNER_TEMP/notes.md" $PRERELEASE
+            --title "$TITLE" --notes-file "$RUNNER_TEMP/notes.md" --latest
