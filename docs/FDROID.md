@@ -11,6 +11,14 @@ nemix の Android 版には2つの版（プロダクトフレーバー）があ�
 
 ## 公開ルート
 
+### 0. nemix 独自の F-Droid リポジトリ（公開中）
+
+- 案内ページ: https://nemi-x.com/fdroid/
+- リポジトリ: `https://nemi-x.com/fdroid/repo`（指紋 `3772913C4C99AA1736A7B828B52AAB892E96B1D7AFAFCA951B8A7D258EEEBE91`）
+- 仕組み: Android のリリースが出るたびに [fdroid-repo ワークフロー](../.github/workflows/fdroid-repo.yml) が、最新3リリースの APK から署名付きの目録を作り、`website/fdroid/repo` にコミットします。Cloudflare がサイトと一緒に配信します。
+- APK 本体は Cloudflare に置かず、`website/_redirects` で GitHub Releases に転送します（Cloudflare の静的ファイルは1ファイル 25MiB まで）。F-Droid アプリは、目録に記録された SHA-256 でダウンロードを検証します。
+- 必要な Secrets: `FDROID_REPO_KEYSTORE_BASE64`、`FDROID_REPO_KEYSTORE_PASSWORD`（目録の署名鍵。アプリの署名鍵とは別）
+
 ### 1. IzzyOnDroid（早い・おすすめの第一歩）
 
 IzzyOnDroid は、GitHub Releases の APK をそのまま配信する F-Droid 互換のリポジトリです。F-Droid アプリに標準で入っています。

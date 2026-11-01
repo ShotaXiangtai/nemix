@@ -158,3 +158,11 @@ jobs:
           sed -i 's/^          //' "$RUNNER_TEMP/notes.md"
           gh release create "$TAG" "$RUNNER_TEMP"/out/* \
             --title "$TITLE" --notes-file "$RUNNER_TEMP/notes.md" --latest
+
+  fdroid-repo:
+    name: Update F-Droid repository
+    needs: release
+    permissions:
+      contents: write
+    uses: ./.github/workflows/fdroid-repo.yml
+    secrets: inherit

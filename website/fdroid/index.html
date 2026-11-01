@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nemix F-Droid リポジトリ</title>
+  <meta name="description" content="nemix の公式 F-Droid リポジトリ。Google のライブラリを含まないプライバシー版を F-Droid アプリで入手・自動更新できます。" />
+  <link rel="icon" type="image/png" href="/assets/nemix-logo.png" />
+  <style>
+    :root { --bg:#f1f5f9; --card:#ffffff; --text:#0f172a; --muted:#64748b; --accent:#0284c7; --accent-ink:#ffffff; --line:#e2e8f0; --code:#f8fafc; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#0b1220; --card:#111a2e; --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent-ink:#0b1220; --line:#1e293b; --code:#0f172a; }
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); padding:32px 16px 64px;
+      font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif; line-height:1.7; }
+    main { max-width:640px; margin:0 auto; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:28px 24px; margin-bottom:20px; }
+    header { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+    header img { width:56px; height:56px; border-radius:14px; }
+    h1 { font-size:22px; margin:0; line-height:1.3; }
+    h2 { font-size:17px; margin:0 0 12px; }
+    p, li { font-size:15px; }
+    .muted { color:var(--muted); font-size:13px; }
+    .btn { display:block; text-align:center; padding:14px; border-radius:12px; font-size:16px; font-weight:600; text-decoration:none;
+      background:var(--accent); color:var(--accent-ink); margin:16px 0 8px; }
+    code { display:block; background:var(--code); border:1px solid var(--line); border-radius:10px; padding:10px 12px;
+      font-size:13px; overflow-wrap:anywhere; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+    ol { padding-left:1.3em; margin:0; }
+    li { margin:6px 0; }
+    a { color:var(--accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <img src="/assets/nemix-logo.png" alt="nemix" />
+      <div>
+        <h1>nemix F-Droid リポジトリ</h1>
+        <div class="muted">プライバシー版（Google のライブラリなし）</div>
+      </div>
+    </header>
+
+    <section class="card">
+      <h2>F-Droid に追加する</h2>
+      <p>Android で F-Droid アプリを入れた状態で、下のボタンを押してください。リポジトリが追加され、nemix をインストールできるようになります。アップデートも F-Droid から自動で届きます。</p>
+      <a class="btn" href="fdroidrepos://nemi-x.com/fdroid/repo?fingerprint=3772913C4C99AA1736A7B828B52AAB892E96B1D7AFAFCA951B8A7D258EEEBE91">F-Droid にリポジトリを追加</a>
+      <p class="muted">ボタンで開けない場合は、F-Droid の「設定 → リポジトリ → ＋」で次のアドレスを追加してください。</p>
+      <code>https://nemi-x.com/fdroid/repo?fingerprint=3772913C4C99AA1736A7B828B52AAB892E96B1D7AFAFCA951B8A7D258EEEBE91</code>
+    </section>
+
+    <section class="card">
+      <h2>手順</h2>
+      <ol>
+        <li><a href="https://f-droid.org/" target="_blank" rel="noopener noreferrer">f-droid.org</a> から F-Droid アプリを入れる</li>
+        <li>このページの「F-Droid にリポジトリを追加」を押す（または上のアドレスを手動で追加）</li>
+        <li>F-Droid で「nemix」を検索してインストールする</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>安全性について</h2>
+      <p>リポジトリの目録は nemix の鍵で署名されています。追加するときに、F-Droid が次の指紋と一致するかを確認します。</p>
+      <code>3772913C 4C99AA17 36A7B828 B52AAB89 2E96B1D7 AFAFCA95 1B8A7D25 8EEEBE91</code>
+      <p class="muted">アプリ本体は GitHub Releases と同じファイルで、署名証明書の SHA-256 は <span style="font-family:ui-monospace,monospace">C8:75:28:0E:…:D0:DE:B6</span> です。ソースコードは <a href="https://github.com/ShotaXiangtai/nemix" target="_blank" rel="noopener noreferrer">GitHub</a> で公開しています（GPL-3.0）。</p>
+    </section>
+
+    <p class="muted" style="text-align:center;"><a href="/">nemix トップへ戻る</a></p>
+  </main>
+</body>
+</html>
