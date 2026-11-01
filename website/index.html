@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>nemix — 100% P2P Serverless Encrypted Messenger &amp; SNS</title>
-  <meta name="description" content="中央サーバーゼロ・100%完全P2Pの次世代スマートフォン暗号化メッセンジャー＆サーバーレスSNS（Android &amp; iOS）。オフライン無線メッシュ、タイムライン＆多チャンネル形式P2Pグループ、永久・時限QR/URL連絡先交換、iOS Liquid Glass、双方スクショ禁止。" />
+  <meta name="description" content="中央サーバーゼロ・100%完全P2Pの次世代スマートフォン暗号化メッセンジャー＆サーバーレスSNS（Android &amp; iOS）。オフライン無線メッシュ、タイムライン＆多チャンネル形式P2Pグループ、永久・時限QR/URL連絡先交換、Android と iOS の相互通信、スクショ禁止。" />
   <link rel="icon" type="image/png" href="./assets/nemix-logo.png" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
@@ -23,8 +23,8 @@
         <a href="#groups" data-i18n="nav_groups">P2Pグループ</a>
         <a href="#features" data-i18n="nav_features">プライバシー機能</a>
         <a href="#download" data-i18n="nav_download">ダウンロード</a>
-        <a href="https://github.com/ShotaXiangtai" target="_blank" rel="noopener noreferrer" class="github-link">
-          GitHub (@ShotaXiangtai) ↗
+        <a href="https://github.com/ShotaXiangtai/nemix" target="_blank" rel="noopener noreferrer" class="github-link">
+          GitHub ↗
         </a>
       </nav>
 
@@ -53,13 +53,13 @@
         </p>
         <div class="hero-cta-row">
           <a href="#download" class="btn btn-white" data-i18n="hero_cta_get">nemix を入手する</a>
-          <a href="https://github.com/ShotaXiangtai" target="_blank" rel="noopener noreferrer" class="btn btn-outline-white" data-i18n="hero_cta_github">
+          <a href="https://github.com/ShotaXiangtai/nemix" target="_blank" rel="noopener noreferrer" class="btn btn-outline-white" data-i18n="hero_cta_github">
             開発者 GitHub を見る
           </a>
         </div>
         <div class="hero-trust-note" data-i18n="hero_trust">
-          ✓ 100% スマホ完結 (Android &amp; iOS) &nbsp;·&nbsp; ✓ Liquid Glass (iOS) &nbsp;·&nbsp; ✓ QR/URL連絡先交換 (永久/時限) &nbsp;·&nbsp; ✓ 周辺非公開モード
-        </div>
+            ✓ 100% スマホ完結 (Android &amp; iOS) · ✓ Android と iOS で相互通信 · ✓ QR/URL連絡先交換 (永久/時限) · ✓ 周辺非公開モード
+          </div>
       </div>
 
       <!-- tilted Signal-style Device Mockup Pair -->
@@ -239,23 +239,27 @@
           <div class="feat-tag">MUTUAL SCREENSHOT BLOCK &amp; ARCHIVE</div>
           <h3 data-i18n="f2_title">相手側にも適用できるスクショ禁止、双方チャット削除 &amp; アーカイブ</h3>
           <p data-i18n="f2_desc">
-            チャットごと・グループごとに「スクリーンショット禁止」を選択可能。ONにすると自分の画面だけでなく通信相手の端末（Android FLAG_SECURE / iOS 録画・キャプチャ保護）でも画面キャプチャがブロックされます。メッセージ単体や履歴全体の双方同時P2P削除、古いチャットのアーカイブ整理にも対応。
+            チャットやグループごとに「スクショ禁止」を選択でき、Android では相手側の画面キャプチャ・録画もブロックします（iOS 版は対応予定）。メッセージ単体や履歴全体の双方同時削除、古いチャットのアーカイブにも対応。
           </p>
         </article>
 
         <article class="feature-box">
           <div class="feat-tag">OS-NATIVE VOICE CALLS</div>
-          <h3 data-i18n="f3_title">OS標準APIによるE2EE音声通話（Telecom &amp; CallKit）、暗号化画像、OS標準位置共有</h3>
+          <h3 data-i18n="f3_title">
+            E2EE 音声通話（Android）、暗号化画像、OS 標準の位置共有
+          </h3>
           <p data-i18n="f3_desc">
-            Android標準TelecomおよびiOS標準CallKitを採用した高音質・低遅延の暗号化音声通話。通話履歴から電話絵文字を排除した自然な表示、EXIF除去画像転送、追跡ゼロのOS標準位置共有を備えています。
+            Android 版は OS 標準の Telecom API による高音質・低遅延の暗号化音声通話に対応しています（iOS 版は対応予定）。EXIF を除去した画像転送と、追跡のない OS 標準の位置共有を備えています。
           </p>
         </article>
 
         <article class="feature-box">
           <div class="feat-tag">LIQUID GLASS &amp; STEALTH MODE</div>
-          <h3 data-i18n="f4_title">iOS Liquid Glassデザイン &amp; 周辺非公開（ステルスモード）</h3>
+          <h3 data-i18n="f4_title">
+            周辺非公開（ステルスモード）&amp; 端末間データ移行
+          </h3>
           <p data-i18n="f4_desc">
-            iOS版では屈折ガラスと流体グラデーションを極限まで活かした「Liquid Glass」UIを採用。「周辺に自分を公開する / しない」を選択でき、非公開時はBLEやWi-Fiでの自動検出を完全停止。さらに端末間直接P2Pによる安全な全データ移行に対応。
+            「周辺に自分を公開する / しない」を選べ、非公開にすると Bluetooth や Wi-Fi での自動検出を止めます。端末どうしの直接通信による安全なデータ移行にも対応しています（Android）。
           </p>
         </article>
       </div>
@@ -273,7 +277,7 @@
         </p>
       </div>
 
-      <div class="download-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 26px; margin-bottom: 36px;">
+      <div class="download-grid">
         <!-- Android Card -->
         <div class="download-card" style="padding: 34px 28px;">
           <div class="dl-platform-badge" style="margin-bottom: 14px;">ANDROID (OFFICIAL)</div>
@@ -283,23 +287,20 @@
           </p>
           <div class="dl-btn-group" style="display: flex; flex-direction: column; gap: 10px;">
             <a href="https://github.com/ShotaXiangtai/nemix/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn-primary" data-i18n="dl_android_btn">
-              Google Play / GitHub リリースを見る ↗
-            </a>
+            GitHub リリースを見る ↗
+          </a>
             <a href="https://github.com/ShotaXiangtai/nemix/releases/latest/download/nemix-android-universal.apk" rel="noopener noreferrer" class="btn btn-outline" data-i18n="dl_apk_btn">
               直接 APK をダウンロード (.apk)
-            </a>
-            <a href="/fdroid/" class="btn btn-outline">
-              F-Droid で入手（自動更新・Google なし）
             </a>
           </div>
         </div>
 
         <!-- iOS Card -->
         <div class="download-card" style="padding: 34px 28px; background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);">
-          <div class="dl-platform-badge" style="background: rgba(88, 101, 242, 0.12); color: #4338ca; margin-bottom: 14px;">iOS / LIQUID GLASS</div>
+          <div class="dl-platform-badge" style="background: rgba(88, 101, 242, 0.12); color: #4338ca; margin-bottom: 14px;">iOS (BETA)</div>
           <h3 style="font-size: 24px; margin-bottom: 10px;">nemix for iOS</h3>
           <p data-i18n="dl_ios_desc" style="font-size: 14.5px; line-height: 1.65; margin-bottom: 22px;">
-            極限まで磨き抜かれたLiquid Glass（屈折半透明・流体グラデーション）UI、CoreBluetooth &amp; Multipeerメッシュ、CallKit音声通話、永久・時限QR/URL交換に対応。
+            Android 版と同じメッシュ・暗号方式で相互に通信できる iOS 版を開発中です。TestFlight でのベータ配布を準備しています。
           </p>
           <div class="dl-btn-group" style="display: flex; flex-direction: column; gap: 10px;">
             <a href="https://github.com/ShotaXiangtai/nemix/tree/main/nemix-ios" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="background:#0f172a;" data-i18n="dl_ios_btn">
@@ -343,8 +344,8 @@
 
       <div class="footer-col">
         <h4 data-i18n="footer_platform">プラットフォーム</h4>
-        <a href="#download">Android (Google Play / APK)</a>
-        <a href="#download">iOS (Liquid Glass / TestFlight)</a>
+        <a href="#download">Android (APK)</a>
+        <a href="#download">iOS (TestFlight)</a>
         <a href="https://github.com/ShotaXiangtai/nemix" target="_blank" rel="noopener noreferrer">GitHub リポジトリ ↗</a>
       </div>
 

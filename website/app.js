@@ -68,11 +68,6 @@
       streamView.classList.add('hidden');
     });
   }
-      streamBtn.classList.remove('active');
-      channelView.classList.remove('hidden');
-      streamView.classList.add('hidden');
-    });
-  }
 
   applyLanguage(detectInitialLang());
 })();
