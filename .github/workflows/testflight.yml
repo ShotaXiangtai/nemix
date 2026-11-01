@@ -128,18 +128,17 @@ jobs:
           ls -la "$RUNNER_TEMP/export"
 
       - name: Upload to App Store Connect
+        env:
+          BUNDLE_ID: im.nemix.ios
+          BUILD_NUMBER: ${{ github.run_number }}
         run: |
-          # fastlane's API key JSON (key content embedded); removed in the cleanup step.
-          node -e 'const fs=require("fs");fs.writeFileSync(process.env.RUNNER_TEMP+"/asc_api_key.json",JSON.stringify({key_id:process.env.ASC_KEY_ID,issuer_id:process.env.ASC_ISSUER_ID,key:fs.readFileSync(process.env.ASC_KEY_PATH,"utf8"),in_house:false}))'
+          export APP_VERSION=$(sed -nE 's/^ *MARKETING_VERSION: *"?([^"]+)"?/\1/p' project.yml | head -1)
           IPA=$(ls "$RUNNER_TEMP"/export/*.ipa | head -1)
-          fastlane run upload_to_testflight \
-            api_key_path:"$RUNNER_TEMP/asc_api_key.json" \
-            ipa:"$IPA" \
-            skip_waiting_for_build_processing:true
+          node ../.github/scripts/asc-upload.mjs "$IPA"
 
       - name: Remove API key
         if: always()
-        run: rm -f "$ASC_KEY_PATH" "$RUNNER_TEMP/asc_api_key.json"
+        run: rm -f "$ASC_KEY_PATH"
 
       - name: Upload logs
         if: failure()
