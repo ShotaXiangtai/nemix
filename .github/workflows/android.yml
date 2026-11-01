@@ -124,7 +124,7 @@ jobs:
             OUT="$RUNNER_TEMP/out/nemix-android-$abi.apk"
             "$BT/zipalign" -P 16 -f 4 "$IN" "$RUNNER_TEMP/aligned.apk"
             "$BT/apksigner" sign --ks "$RUNNER_TEMP/release.jks" --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
-              --ks-key-alias "$ANDROID_KEY_ALIAS" --out "$OUT" "$RUNNER_TEMP/aligned.apk"
+              --ks-key-alias "$ANDROID_KEY_ALIAS" --v4-signing-enabled false --out "$OUT" "$RUNNER_TEMP/aligned.apk"
             "$BT/apksigner" verify "$OUT"
           done
           rm -f "$RUNNER_TEMP/release.jks"
