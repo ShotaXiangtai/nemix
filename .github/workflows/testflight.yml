@@ -129,17 +129,17 @@ jobs:
 
       - name: Upload to App Store Connect
         run: |
-          # altool looks for the key as ~/.appstoreconnect/private_keys/AuthKey_<id>.p8
-          mkdir -p ~/.appstoreconnect/private_keys
-          cp "$ASC_KEY_PATH" ~/.appstoreconnect/private_keys/
+          # fastlane's API key JSON (key content embedded); removed in the cleanup step.
+          node -e 'const fs=require("fs");fs.writeFileSync(process.env.RUNNER_TEMP+"/asc_api_key.json",JSON.stringify({key_id:process.env.ASC_KEY_ID,issuer_id:process.env.ASC_ISSUER_ID,key:fs.readFileSync(process.env.ASC_KEY_PATH,"utf8"),in_house:false}))'
           IPA=$(ls "$RUNNER_TEMP"/export/*.ipa | head -1)
-          xcrun altool --upload-app --type ios --file "$IPA" \
-            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee upload.log
-          grep -qiE "No errors uploading|UPLOAD SUCCEEDED" upload.log
+          fastlane run upload_to_testflight \
+            api_key_path:"$RUNNER_TEMP/asc_api_key.json" \
+            ipa:"$IPA" \
+            skip_waiting_for_build_processing:true
 
       - name: Remove API key
         if: always()
-        run: rm -f "$ASC_KEY_PATH" ~/.appstoreconnect/private_keys/*.p8
+        run: rm -f "$ASC_KEY_PATH" "$RUNNER_TEMP/asc_api_key.json"
 
       - name: Upload logs
         if: failure()
