@@ -70,7 +70,14 @@ jobs:
             }
             const n = (body.data || []).length;
             console.log("App record for im.nemix.ios found:", n > 0 ? "yes" : "NO - create the app in App Store Connect first");
-            if (n === 0) process.exit(1);
+            if (n === 0) {
+              const all = await (await fetch("https://api.appstoreconnect.apple.com/v1/apps?limit=50&fields[apps]=name,bundleId",
+                { headers: { Authorization: "Bearer " + jwt } })).json().catch(() => ({}));
+              const apps = all.data || [];
+              console.log("Apps in this App Store Connect account:", apps.length);
+              for (const a of apps) console.log("   -", a.attributes.name, "/", a.attributes.bundleId);
+              process.exit(1);
+            }
           })();
           JS
 
