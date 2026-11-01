@@ -34,8 +34,8 @@ android {
         applicationId = "im.nemix.android"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.1.2"
         buildConfigField(
             "String",
             "GITHUB_RELEASE_CERT_SHA256",
@@ -62,17 +62,18 @@ android {
     // Two distributions from one codebase:
     // - play:   Google Play build that uses Google ML Kit (QR scanning) and
     //           Google Play Services (fused location).
-    // - fdroid: privacy build with no Google proprietary libraries (ZXing,
-    //           Android LocationManager). Used for F-Droid and GitHub Releases.
+    // - github: privacy build with no Google proprietary libraries (ZXing,
+    //           Android LocationManager). Distributed on GitHub Releases and
+    //           keeps itself up to date with the in-app updater.
     flavorDimensions += "distribution"
     productFlavors {
         create("play") {
             dimension = "distribution"
             buildConfigField("String", "DISTRIBUTION", "\"play\"")
         }
-        create("fdroid") {
+        create("github") {
             dimension = "distribution"
-            buildConfigField("String", "DISTRIBUTION", "\"fdroid\"")
+            buildConfigField("String", "DISTRIBUTION", "\"github\"")
         }
     }
 

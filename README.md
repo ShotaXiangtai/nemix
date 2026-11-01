@@ -29,7 +29,7 @@ Android の APK は [Releases](https://github.com/ShotaXiangtai/nemix/releases) 
 
 ```sh
 cd bitchat-android
-./gradlew :app:assembleFdroidDebug   # プライバシー版（Google のライブラリなし。GitHub Releases / F-Droid）
+./gradlew :app:assembleGithubDebug   # プライバシー版（Google のライブラリなし。GitHub Releases・アプリ内更新）
 ./gradlew :app:assemblePlayDebug     # Google Play 版（ML Kit・Google Play 開発者サービスを使用）
 ```
 
@@ -42,7 +42,6 @@ cd bitchat-android
 
 - [docs/RELEASING.md](docs/RELEASING.md) — 署名鍵、GitHub Releases、Mac なしの iOS ビルド
 - [docs/STORE_RELEASE.md](docs/STORE_RELEASE.md) — Google Play（ベータ→正式）と TestFlight→App Store の公開手順
-- [docs/FDROID.md](docs/FDROID.md) — F-Droid / IzzyOnDroid での公開（Google のライブラリなしのプライバシー版）
 
 ## ライセンス
 

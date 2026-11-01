@@ -118,7 +118,7 @@ class LocationChannelManager private constructor(private val context: Context) {
 
 
     init {
-        // Play build: Google fused location; F-Droid build: Android LocationManager only
+        // Play build: Google fused location; GitHub build: Android LocationManager only
         locationProvider = LocationProviderFactory.create(context)
         LiveLocationPrivacyGate.addRevocationListener(::cancelLiveLocationWork)
 

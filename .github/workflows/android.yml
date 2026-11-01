@@ -39,21 +39,21 @@ jobs:
       - name: Verify native library checksums
         run: tools/arti-build/verify-checksums.sh
 
-      - name: Build debug APKs (fdroid + play)
-        run: ./gradlew :app:assembleFdroidDebug :app:assemblePlayDebug --stacktrace
+      - name: Build debug APKs (github + play)
+        run: ./gradlew :app:assembleGithubDebug :app:assemblePlayDebug --stacktrace
 
       - uses: actions/upload-artifact@v4
         with:
           name: nemix-android-debug
           path: |
-            bitchat-android/app/build/outputs/apk/fdroid/debug/app-fdroid-universal-debug.apk
+            bitchat-android/app/build/outputs/apk/github/debug/app-github-universal-debug.apk
             bitchat-android/app/build/outputs/apk/play/debug/app-play-universal-debug.apk
           retention-days: 14
 
       # Upstream test suite. Reported but not yet blocking while nemix changes settle.
       - name: Unit tests
         continue-on-error: true
-        run: ./gradlew :app:testFdroidDebugUnitTest
+        run: ./gradlew :app:testGithubDebugUnitTest
 
       - name: Upload test report
         if: always()
@@ -110,9 +110,9 @@ jobs:
           # Pinned into BuildConfig so in-app APK downloads only accept nemix-signed releases.
           echo "BITCHAT_GITHUB_RELEASE_CERT_SHA256=$FP" >> "$GITHUB_ENV"
 
-      # GitHub Releases ship the privacy (fdroid) build: no Google proprietary libraries.
+      # GitHub Releases ship the privacy (github) build: no Google proprietary libraries.
       - name: Build release APKs
-        run: ./gradlew :app:assembleFdroidRelease --stacktrace
+        run: ./gradlew :app:assembleGithubRelease --stacktrace
 
       - name: Align and sign
         env:
@@ -122,7 +122,7 @@ jobs:
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           mkdir -p "$RUNNER_TEMP/out"
           for abi in universal arm64-v8a armeabi-v7a x86_64 x86; do
-            IN="app/build/outputs/apk/fdroid/release/app-fdroid-$abi-release-unsigned.apk"
+            IN="app/build/outputs/apk/github/release/app-github-$abi-release-unsigned.apk"
             [ -f "$IN" ] || { echo "::error::missing $IN"; exit 1; }
             OUT="$RUNNER_TEMP/out/nemix-android-$abi.apk"
             "$BT/zipalign" -P 16 -f 4 "$IN" "$RUNNER_TEMP/aligned.apk"
@@ -131,6 +131,12 @@ jobs:
             "$BT/apksigner" verify "$OUT"
           done
           rm -f "$RUNNER_TEMP/release.jks"
+          # Read by the in-app updater (GitHub build) to decide whether an update exists.
+          VERSION_CODE=$(sed -nE 's/^ *versionCode = ([0-9]+).*/\1/p' app/build.gradle.kts | head -1)
+          VERSION_NAME=$(sed -nE 's/^ *versionName = "([^"]+)"/\1/p' app/build.gradle.kts | head -1)
+          printf '{"versionCode":%s,"versionName":"%s","tag":"%s"}\n' "$VERSION_CODE" "$VERSION_NAME" "$TAG" \
+            > "$RUNNER_TEMP/out/nemix-android-version.json"
+          cat "$RUNNER_TEMP/out/nemix-android-version.json"
           (cd "$RUNNER_TEMP/out" && sha256sum *.apk > SHA256SUMS.txt && cat SHA256SUMS.txt)
 
       - name: Publish GitHub Release
@@ -158,11 +164,3 @@ jobs:
           sed -i 's/^          //' "$RUNNER_TEMP/notes.md"
           gh release create "$TAG" "$RUNNER_TEMP"/out/* \
             --title "$TITLE" --notes-file "$RUNNER_TEMP/notes.md" --latest
-
-  fdroid-repo:
-    name: Update F-Droid repository
-    needs: release
-    permissions:
-      contents: write
-    uses: ./.github/workflows/fdroid-repo.yml
-    secrets: inherit

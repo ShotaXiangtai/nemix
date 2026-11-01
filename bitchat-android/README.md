@@ -14,7 +14,7 @@ nemix は bitchat プロジェクトとは無関係の独立したプロジェ�
 ## ビルド
 
 ```sh
-./gradlew :app:assembleFdroidDebug   # プライバシー版（Google のライブラリなし）
+./gradlew :app:assembleGithubDebug   # プライバシー版（Google のライブラリなし）
 ./gradlew :app:assemblePlayDebug     # Google Play 版
 ```
 

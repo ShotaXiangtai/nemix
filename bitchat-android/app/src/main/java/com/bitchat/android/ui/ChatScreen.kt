@@ -14,6 +14,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bitchat.android.R
 import com.bitchat.android.call.WirelessCallOverlay
 import com.bitchat.android.contact.ContactExchangeManager
+import com.bitchat.android.update.AppUpdateController
+import com.bitchat.android.update.AppUpdatePrompt
 import com.bitchat.android.groups.P2PGroupManager
 import com.bitchat.android.legal.TermsOfServiceManager
 import com.bitchat.android.profile.ProfileSetupDialog
@@ -187,6 +189,13 @@ fun ChatScreen(viewModel: ChatViewModel) {
             }
         }
     }
+
+    // In-app updates (GitHub build): quiet automatic check, dialogs only when there is something to do
+    val updateContext = LocalContext.current
+    LaunchedEffect(isProfileSetupCompleted, isTosAccepted) {
+        if (isProfileSetupCompleted && isTosAccepted) AppUpdateController.checkAutomatically(updateContext)
+    }
+    AppUpdatePrompt()
 
     // Contact invite link tapped outside the app (nemix://contact/... or https://nemi-x.com/c#...)
     val invite = incomingInvite

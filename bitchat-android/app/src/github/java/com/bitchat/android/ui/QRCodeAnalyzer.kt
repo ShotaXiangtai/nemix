@@ -11,7 +11,7 @@ import com.google.zxing.common.HybridBinarizer
 import com.google.zxing.qrcode.QRCodeReader
 
 /**
- * F-Droid / privacy build: QR code analyzer built on ZXing (fully open source, no network access or telemetry).
+ * GitHub / privacy build: QR code analyzer built on ZXing (fully open source, no network access or telemetry).
  * Reads the luminance (Y) plane of the CameraX YUV_420_888 frame.
  */
 internal class QRCodeAnalyzer(

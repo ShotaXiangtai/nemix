@@ -53,7 +53,7 @@ nemix には2つの版があります。どちらも開発者が個人情報を�
 
 | 版 | 入手先 | Google のライブラリ |
 |---|---|---|
-| **プライバシー版** | GitHub Releases、F-Droid | **一切含みません**。QR コードの読み取りは ZXing、位置情報は Android 標準機能で端末内で処理します |
+| **プライバシー版** | GitHub Releases（アプリ内で更新） | **一切含みません**。QR コードの読み取りは ZXing、位置情報は Android 標準機能で端末内で処理します |
 | **Google Play 版** | Google Play | QR コードの読み取りに Google ML Kit、位置情報の取得に Google Play 開発者サービスを使います |
 
 Google Play 版では、QR コードの画像解析は端末内で行われますが、Google ML Kit と Google Play 開発者サービスが、Google のポリシー（https://policies.google.com/privacy ）に基づいて利用状況や診断情報を Google に送信することがあります。位置情報を使う機能では、Google の位置情報サービスが位置の算出に関与します。これを避けたい場合はプライバシー版をご利用ください。
@@ -84,4 +84,4 @@ Google Play 版では、QR コードの画像解析は端末内で行われま�
 - Messages, media and calls are **end-to-end encrypted**; EXIF metadata is stripped from images.
 - Optional internet mode relays encrypted data through **third-party public Nostr relays**, which can see your IP address (use the built-in Tor option to hide it).
 - Location is sent only when you explicitly share it.
-- Two editions: the **privacy edition** (GitHub Releases, F-Droid) contains no Google libraries. The **Google Play edition** uses Google ML Kit (QR scanning) and Google Play services (location), which may send usage and diagnostic data to Google under Google's privacy policy.
+- Two editions: the **privacy edition** (GitHub Releases, updated in-app) contains no Google libraries. The **Google Play edition** uses Google ML Kit (QR scanning) and Google Play services (location), which may send usage and diagnostic data to Google under Google's privacy policy.

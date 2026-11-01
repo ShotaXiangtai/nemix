@@ -425,6 +425,16 @@ fun AboutSheet(
                         AboutHero(versionName = versionName ?: "")
                     }
 
+                    if (com.bitchat.android.update.AppUpdater.isSupported) {
+                        item(key = "app_update") {
+                            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                TextButton(onClick = { com.bitchat.android.update.AppUpdateController.checkNow(context) }) {
+                                    Text("アップデートを確認")
+                                }
+                            }
+                        }
+                    }
+
                     item(key = "tabs") {
                         AboutTabBar(
                             selected = selectedTab,
