@@ -182,10 +182,8 @@ public struct ContactExchangeView: View {
                 )
             } else {
                 let expiryDate = Date().addingTimeInterval(selectedDurationSeconds)
-                let formatter = DateFormatter()
-                formatter.dateFormat = "M/d HH:mm"
                 LiquidGlassBadge(
-                    text: "有効期限: \(formatter.string(from: expiryDate)) まで",
+                    text: "有効期限: \(expiryDate.formatted(.dateTime.month(.defaultDigits).day().hour().minute())) まで",
                     icon: "clock.fill",
                     tint: Color.orange
                 )
