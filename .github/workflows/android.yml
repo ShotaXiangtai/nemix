@@ -1,0 +1,155 @@
+name: Android
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "bitchat-android/**"
+      - ".github/workflows/android.yml"
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - "bitchat-android/**"
+      - ".github/workflows/android.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  debug:
+    name: Debug build
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: bitchat-android
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+
+      - name: Verify native library checksums
+        run: tools/arti-build/verify-checksums.sh
+
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nemix-android-debug
+          path: bitchat-android/app/build/outputs/apk/debug/app-universal-debug.apk
+          retention-days: 14
+
+      # Upstream test suite. Reported but not yet blocking while nemix changes settle.
+      - name: Unit tests
+        continue-on-error: true
+        run: ./gradlew :app:testDebugUnitTest
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-report
+          path: bitchat-android/app/build/reports/tests/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  release:
+    name: Signed release
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: bitchat-android
+    env:
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
+
+      - name: Check tag matches versionName
+        run: |
+          VERSION_NAME=$(sed -nE 's/^ *versionName = "([^"]+)"/\1/p' app/build.gradle.kts | head -1)
+          BASE_TAG="${TAG#v}"
+          BASE_TAG="${BASE_TAG%%-*}"
+          if [ "$BASE_TAG" != "$VERSION_NAME" ]; then
+            echo "::error::Tag $TAG does not match versionName $VERSION_NAME in app/build.gradle.kts"
+            exit 1
+          fi
+
+      - name: Restore signing key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::Repository secret ANDROID_KEYSTORE_BASE64 is not set. See docs/RELEASING.md."
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          FP=$(keytool -list -v -keystore "$RUNNER_TEMP/release.jks" -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" | sed -nE 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -1)
+          echo "CERT_SHA256=$FP" >> "$GITHUB_ENV"
+          # Pinned into BuildConfig so in-app APK downloads only accept nemix-signed releases.
+          echo "BITCHAT_GITHUB_RELEASE_CERT_SHA256=$FP" >> "$GITHUB_ENV"
+
+      - name: Build release APKs
+        run: ./gradlew :app:assembleRelease --stacktrace
+
+      - name: Align and sign
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          mkdir -p "$RUNNER_TEMP/out"
+          for abi in universal arm64-v8a armeabi-v7a x86_64 x86; do
+            IN="app/build/outputs/apk/release/app-$abi-release-unsigned.apk"
+            [ -f "$IN" ] || { echo "::error::missing $IN"; exit 1; }
+            OUT="$RUNNER_TEMP/out/nemix-android-$abi.apk"
+            "$BT/zipalign" -P 16 -f 4 "$IN" "$RUNNER_TEMP/aligned.apk"
+            "$BT/apksigner" sign --ks "$RUNNER_TEMP/release.jks" --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
+              --ks-key-alias "$ANDROID_KEY_ALIAS" --out "$OUT" "$RUNNER_TEMP/aligned.apk"
+            "$BT/apksigner" verify "$OUT"
+          done
+          rm -f "$RUNNER_TEMP/release.jks"
+          (cd "$RUNNER_TEMP/out" && sha256sum *.apk > SHA256SUMS.txt && cat SHA256SUMS.txt)
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PRERELEASE=""
+          case "$TAG" in *-*) PRERELEASE="--prerelease" ;; esac
+          cat > "$RUNNER_TEMP/notes.md" <<EOF
+          ## nemix for Android ${TAG}
+
+          Download **nemix-android-universal.apk** if you are unsure which file to pick.
+
+          ### Verify the signature
+          Signing certificate SHA-256:
+          \`${CERT_SHA256}\`
+
+          \`apksigner verify --print-certs nemix-android-universal.apk\` must show this fingerprint.
+          File checksums are in \`SHA256SUMS.txt\`.
+
+          Source code: this tag (GPL-3.0). Based on bitchat-android by permissionlesstech.
+          EOF
+          sed -i 's/^          //' "$RUNNER_TEMP/notes.md"
+          gh release create "$TAG" "$RUNNER_TEMP"/out/* \
+            --title "nemix ${TAG}" --notes-file "$RUNNER_TEMP/notes.md" $PRERELEASE

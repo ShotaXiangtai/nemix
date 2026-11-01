@@ -1,0 +1,147 @@
+# nemix による bitchat-android からの変更一覧 / Changes from upstream
+
+GPL-3.0 第5条(a) に基づく改変表示です。This file is the modification notice required by GPL-3.0 §5(a).
+
+- 上流 / Upstream: https://github.com/permissionlesstech/bitchat-android
+- 基準コミット / Base commit: `998f1684878f1e8aaf2c4d5ad682795acd3cedad` (2026-11-01)
+- 改変者 / Modified by: nemix contributors (https://github.com/ShotaXiangtai)
+- 改変日 / Modification date: 2026-11-01 〜
+
+以降の変更は Git の履歴を参照してください。Subsequent changes are recorded in this repository's Git history.
+
+## 変更されたファイル / Modified files
+
+- `app/build.gradle.kts`
+- `app/src/debug/AndroidManifest.xml`
+- `app/src/debug/java/com/bitchat/android/testhook/TestHookReceiver.kt`
+- `app/src/main/AndroidManifest.xml`
+- `app/src/main/java/com/bitchat/android/BitchatApplication.kt`
+- `app/src/main/java/com/bitchat/android/MainActivity.kt`
+- `app/src/main/java/com/bitchat/android/features/media/ImageUtils.kt`
+- `app/src/main/java/com/bitchat/android/hotspot/ApkWebServer.kt`
+- `app/src/main/java/com/bitchat/android/hotspot/HotspotActivity.kt`
+- `app/src/main/java/com/bitchat/android/mesh/BluetoothConnectionManager.kt`
+- `app/src/main/java/com/bitchat/android/mesh/BluetoothMeshService.kt`
+- `app/src/main/java/com/bitchat/android/mesh/MessageHandler.kt`
+- `app/src/main/java/com/bitchat/android/mesh/UnifiedMeshService.kt`
+- `app/src/main/java/com/bitchat/android/net/TorPreferenceManager.kt`
+- `app/src/main/java/com/bitchat/android/nostr/NostrBackgroundRuntime.kt`
+- `app/src/main/java/com/bitchat/android/nostr/NostrDirectMessageHandler.kt`
+- `app/src/main/java/com/bitchat/android/nostr/NostrRelayManager.kt`
+- `app/src/main/java/com/bitchat/android/nostr/NostrTransport.kt`
+- `app/src/main/java/com/bitchat/android/onboarding/PermissionExplanationScreen.kt`
+- `app/src/main/java/com/bitchat/android/service/MeshForegroundService.kt`
+- `app/src/main/java/com/bitchat/android/service/MeshServicePreferences.kt`
+- `app/src/main/java/com/bitchat/android/services/AppStateStore.kt`
+- `app/src/main/java/com/bitchat/android/services/IncomingMessageAdmission.kt`
+- `app/src/main/java/com/bitchat/android/services/MessageRouter.kt`
+- `app/src/main/java/com/bitchat/android/ui/AboutSections.kt`
+- `app/src/main/java/com/bitchat/android/ui/AboutSheet.kt`
+- `app/src/main/java/com/bitchat/android/ui/ApkDownloadViewModel.kt`
+- `app/src/main/java/com/bitchat/android/ui/ChatScreen.kt`
+- `app/src/main/java/com/bitchat/android/ui/InputComponents.kt`
+- `app/src/main/java/com/bitchat/android/ui/MediaSendingManager.kt`
+- `app/src/main/java/com/bitchat/android/ui/VerificationSheet.kt`
+- `app/src/main/java/com/bitchat/android/ui/theme/BitchatPalette.kt`
+- `app/src/main/java/com/bitchat/android/ui/theme/ChatUiMode.kt`
+- `app/src/main/java/com/bitchat/android/ui/theme/Theme.kt`
+- `app/src/main/java/com/bitchat/android/util/DistributionInfoProvider.kt`
+- `app/src/main/java/com/bitchat/android/util/UniversalApkManager.kt`
+- `app/src/main/java/com/bitchat/android/wifi-aware/WifiAwareController.kt`
+- `app/src/main/res/drawable/ic_launcher_background.xml`
+- `app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml`
+- `app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml`
+- `app/src/main/res/mipmap-hdpi/ic_launcher.png`
+- `app/src/main/res/mipmap-mdpi/ic_launcher.png`
+- `app/src/main/res/mipmap-xhdpi/ic_launcher.png`
+- `app/src/main/res/mipmap-xxhdpi/ic_launcher.png`
+- `app/src/main/res/mipmap-xxxhdpi/ic_launcher.png`
+- `app/src/main/res/values-ar/strings.xml`
+- `app/src/main/res/values-bn/strings.xml`
+- `app/src/main/res/values-de/strings.xml`
+- `app/src/main/res/values-es/strings.xml`
+- `app/src/main/res/values-eu/strings.xml`
+- `app/src/main/res/values-fa/strings.xml`
+- `app/src/main/res/values-fil/strings.xml`
+- `app/src/main/res/values-fr/strings.xml`
+- `app/src/main/res/values-he/strings.xml`
+- `app/src/main/res/values-hi/strings.xml`
+- `app/src/main/res/values-id/strings.xml`
+- `app/src/main/res/values-it/strings.xml`
+- `app/src/main/res/values-ja/strings.xml`
+- `app/src/main/res/values-ka/strings.xml`
+- `app/src/main/res/values-ko/strings.xml`
+- `app/src/main/res/values-mg/strings.xml`
+- `app/src/main/res/values-ms/strings.xml`
+- `app/src/main/res/values-ne/strings.xml`
+- `app/src/main/res/values-nl/strings.xml`
+- `app/src/main/res/values-pa-rPK/strings.xml`
+- `app/src/main/res/values-pl/strings.xml`
+- `app/src/main/res/values-pt-rBR/strings.xml`
+- `app/src/main/res/values-pt/strings.xml`
+- `app/src/main/res/values-ru/strings.xml`
+- `app/src/main/res/values-sv/strings.xml`
+- `app/src/main/res/values-ta/strings.xml`
+- `app/src/main/res/values-th/strings.xml`
+- `app/src/main/res/values-tr/strings.xml`
+- `app/src/main/res/values-uk/strings.xml`
+- `app/src/main/res/values-ur/strings.xml`
+- `app/src/main/res/values-vi/strings.xml`
+- `app/src/main/res/values-zh-rCN/strings.xml`
+- `app/src/main/res/values-zh-rTW/strings.xml`
+- `app/src/main/res/values-zh/strings.xml`
+- `app/src/main/res/values/strings.xml`
+- `wear/build.gradle.kts`
+- `wear/src/main/res/values/strings.xml`
+
+## 削除されたファイル / Deleted files
+
+- `app/src/main/res/drawable/ic_launcher_foreground.xml`
+- `app/src/main/res/drawable/ic_launcher_monochrome.xml`
+
+## nemix で追加されたファイル / Files added by nemix
+
+- `NEMIX_CHANGES.md`
+- `app/src/main/java/com/bitchat/android/call/NemixConnectionService.kt`
+- `app/src/main/java/com/bitchat/android/call/WirelessCallManager.kt`
+- `app/src/main/java/com/bitchat/android/call/WirelessCallScreen.kt`
+- `app/src/main/java/com/bitchat/android/contact/ContactExchangeManager.kt`
+- `app/src/main/java/com/bitchat/android/directory/NemixUuidDirectoryManager.kt`
+- `app/src/main/java/com/bitchat/android/features/location/LocationMessageCard.kt`
+- `app/src/main/java/com/bitchat/android/features/location/LocationShareHelper.kt`
+- `app/src/main/java/com/bitchat/android/features/media/InternetMediaTransfer.kt`
+- `app/src/main/java/com/bitchat/android/groups/P2PGroupManager.kt`
+- `app/src/main/java/com/bitchat/android/legal/TermsOfServiceManager.kt`
+- `app/src/main/java/com/bitchat/android/legal/TermsOfServiceSheet.kt`
+- `app/src/main/java/com/bitchat/android/migration/MigrationClient.kt`
+- `app/src/main/java/com/bitchat/android/migration/MigrationDataPackager.kt`
+- `app/src/main/java/com/bitchat/android/migration/MigrationServer.kt`
+- `app/src/main/java/com/bitchat/android/migration/MigrationSheet.kt`
+- `app/src/main/java/com/bitchat/android/net/InternetRelayPreferences.kt`
+- `app/src/main/java/com/bitchat/android/net/MeshInternetGatewayBridge.kt`
+- `app/src/main/java/com/bitchat/android/profile/ProfileSetupDialog.kt`
+- `app/src/main/java/com/bitchat/android/profile/UserProfileManager.kt`
+- `app/src/main/java/com/bitchat/android/security/AppLockManager.kt`
+- `app/src/main/java/com/bitchat/android/security/AppLockOverlay.kt`
+- `app/src/main/java/com/bitchat/android/security/ChatSecurityPolicyManager.kt`
+- `app/src/main/java/com/bitchat/android/services/ChatArchiveManager.kt`
+- `app/src/main/java/com/bitchat/android/services/NemixProtocolInterceptor.kt`
+- `app/src/main/java/com/bitchat/android/ui/ChannelModeHomeAndChatScreen.kt`
+- `app/src/main/java/com/bitchat/android/ui/ClassicChatScreen.kt`
+- `app/src/main/java/com/bitchat/android/ui/ClassicComponents.kt`
+- `app/src/main/java/com/bitchat/android/ui/ClassicHomeScreen.kt`
+- `app/src/main/java/com/bitchat/android/ui/ContactExchangeSheet.kt`
+- `app/src/main/java/com/bitchat/android/ui/CreateOrJoinGroupDialog.kt`
+- `app/src/main/java/com/bitchat/android/ui/P2PGroupScreen.kt`
+- `app/src/main/java/com/bitchat/android/ui/theme/ClassicTheme.kt`
+- `app/src/main/res/drawable/ic_nemix_logo.png`
+- `app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png`
+- `app/src/main/res/mipmap-hdpi/ic_launcher_round.png`
+- `app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png`
+- `app/src/main/res/mipmap-mdpi/ic_launcher_round.png`
+- `app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png`
+- `app/src/main/res/mipmap-xhdpi/ic_launcher_round.png`
+- `app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png`
+- `app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png`
+- `app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png`
+- `app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png`

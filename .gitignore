@@ -1,0 +1,23 @@
+# Local logs and machine-specific files (never publish)
+*.log
+local.properties
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Signing material (never commit)
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+keystore.properties
+*.env.local
+
+# Build outputs
+build/
+.gradle/
+.kotlin/
+*.apk
+*.aab
+*.ipa

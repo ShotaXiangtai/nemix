@@ -1,0 +1,83 @@
+name: iOS
+
+# Builds the iOS app on GitHub's macOS runners, so no local Mac is needed.
+# - Simulator build: verifies the code compiles.
+# - Unsigned IPA artifact: can be sideloaded from Windows with a tool that
+#   re-signs it with your own Apple ID (for example Sideloadly).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "nemix-ios/**"
+      - ".github/workflows/ios.yml"
+  pull_request:
+    paths:
+      - "nemix-ios/**"
+      - ".github/workflows/ios.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: nemix-ios
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Show toolchain
+        run: xcodebuild -version && swift --version
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build for simulator
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Nemix.xcodeproj -scheme Nemix -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/sim \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build-sim.log | grep -E "error:|warning: unre|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" build-sim.log
+
+      - name: Build unsigned device app
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project Nemix.xcodeproj -scheme Nemix -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/device \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" 2>&1 | tee build-device.log | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" build-device.log
+
+      - name: Package unsigned IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/device/Build/Products/Release-iphoneos/Nemix.app Payload/
+          zip -qr nemix-ios-unsigned.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nemix-ios-unsigned-ipa
+          path: nemix-ios/nemix-ios-unsigned.ipa
+          retention-days: 14
+
+      - name: Upload build logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-logs
+          path: nemix-ios/build-*.log
+          retention-days: 7

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>プライバシーポリシー — nemix</title>
+  <meta name="description" content="nemix のプライバシーポリシー。開発者は個人情報を一切収集しません。" />
+  <link rel="icon" type="image/png" href="./assets/nemix-logo.png" />
+  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    .policy { max-width: 760px; margin: 0 auto; padding: 48px 20px 80px; line-height: 1.8; color: #1e293b; }
+    .policy h1 { font-size: 32px; margin-bottom: 4px; }
+    .policy h2 { font-size: 20px; margin-top: 40px; padding-top: 8px; border-top: 1px solid #e2e8f0; }
+    .policy .updated { color: #64748b; font-size: 14px; }
+    .policy ul { padding-left: 1.4em; }
+    .policy li { margin: 6px 0; }
+    .policy .lead { background: #eff6ff; border-radius: 12px; padding: 16px 20px; font-weight: 600; }
+    .policy .table-wrap { overflow-x: auto; }
+    .policy table { border-collapse: collapse; width: 100%; font-size: 15px; }
+    .policy th, .policy td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    .policy a { color: #0369a1; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container nav-inner">
+      <a href="./index.html" class="brand">
+        <img src="./assets/nemix-logo.png" alt="nemix logo" class="brand-icon" />
+        <span class="brand-word">nemix</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="policy">
+    <h1>プライバシーポリシー</h1>
+    <p class="updated">最終更新日: 2026年11月1日</p>
+
+    <p>nemix（以下「本アプリ」）は、中央サーバーを持たない P2P メッセンジャーです。本ポリシーは、本アプリがどのような情報をどこで扱うかを説明します。</p>
+
+    <h2>1. 開発者が収集する情報</h2>
+    <p class="lead">開発者は、ユーザーの個人情報を一切収集しません。</p>
+    <p>本アプリには開発者が運営するサーバー、アカウント登録、広告、アナリティクス、トラッキング、クラッシュレポートの自動送信はありません。</p>
+
+    <h2>2. 端末内にのみ保存される情報</h2>
+    <p>以下の情報はユーザーの端末内にのみ保存され、開発者に送信されることはありません。</p>
+    <ul>
+      <li>暗号鍵（ID 鍵・グループ鍵）</li>
+      <li>プロフィール（表示名・アイコン画像）</li>
+      <li>連絡先、チャット履歴、グループ情報、設定</li>
+    </ul>
+    <p>チャット履歴やグループ情報は端末内で暗号化して保存されます。アプリを削除するか「緊急データ全消去」を実行すると消去されます。</p>
+
+    <h2>3. 通信相手に送信される情報</h2>
+    <ul>
+      <li><strong>メッセージ・画像・音声・通話</strong>: エンドツーエンドで暗号化され、宛先の相手だけが復号できます</li>
+      <li><strong>プロフィール</strong>: 設定した表示名とアイコンは、通信相手に暗号化して同期されます</li>
+      <li><strong>画像</strong>: 送信前に EXIF（位置情報・撮影機器情報など）を自動で除去します</li>
+      <li><strong>位置情報</strong>: 送信ボタンを押したときだけ OS 標準機能で取得し、暗号化して相手に送信します。常時追跡は行いません</li>
+    </ul>
+
+    <h2>4. インターネット経由の通信（任意）</h2>
+    <p>インターネット経由の通信機能を使う場合、本アプリは第三者が運営する公開 Nostr リレーを使って暗号化されたデータを中継します。</p>
+    <ul>
+      <li>リレーに送られるメッセージの内容は暗号化されており、リレー運営者は読めません</li>
+      <li>ただし、リレー運営者は接続元の <strong>IP アドレス</strong>と通信の時刻・量を知ることができます。IP アドレスを隠したい場合は、アプリ内の Tor 機能を有効にしてください</li>
+      <li>ランダム UUID による友達検索を使う場合、UUID から導出した鍵で暗号化された連絡先レコードがリレーに公開されます。UUID を知らない人は内容を読めません</li>
+      <li>利用するリレーは設定で変更できます。各リレーの扱いは、それぞれの運営者のポリシーに従います</li>
+    </ul>
+
+    <h2>5. 端末の権限</h2>
+    <div class="table-wrap">
+      <table>
+        <tr><th>権限</th><th>目的</th></tr>
+        <tr><td>Bluetooth / 近くのデバイス</td><td>オフラインのメッシュ通信</td></tr>
+        <tr><td>位置情報</td><td>Android で Bluetooth スキャンを行うための OS 要件、および位置情報の送信（任意）</td></tr>
+        <tr><td>Wi-Fi / ローカルネットワーク</td><td>Wi-Fi Aware による端末間通信、端末間データ移行</td></tr>
+        <tr><td>マイク</td><td>音声メッセージと音声通話</td></tr>
+        <tr><td>カメラ</td><td>QR コードの読み取り、写真の送信</td></tr>
+        <tr><td>通知</td><td>新着メッセージ・着信の通知</td></tr>
+        <tr><td>生体認証</td><td>アプリロック（認証情報は OS が管理し、本アプリは取得しません）</td></tr>
+      </table>
+    </div>
+
+    <h2>6. 外部リンク</h2>
+    <p>位置情報カードから地図を開いた場合、その座標は地図サービス（OpenStreetMap など）に送信されます。これはユーザーが操作したときのみ発生します。</p>
+
+    <h2>7. 子どもの利用</h2>
+    <p>本アプリは13歳未満の方を対象としていません。</p>
+
+    <h2>8. 本ポリシーの変更</h2>
+    <p>本ポリシーを変更した場合は、本ページと GitHub リポジトリで告知します。</p>
+
+    <h2>9. お問い合わせ</h2>
+    <p>GitHub の Issues からご連絡ください: <a href="https://github.com/ShotaXiangtai/nemix/issues" target="_blank" rel="noopener noreferrer">github.com/ShotaXiangtai/nemix/issues</a></p>
+
+    <h2 lang="en">Summary (English)</h2>
+    <ul lang="en">
+      <li>The developer collects <strong>no personal data</strong>. There are no developer-run servers, accounts, ads, analytics or tracking.</li>
+      <li>Keys, profile, contacts and chat history are stored <strong>only on your device</strong> (encrypted at rest).</li>
+      <li>Messages, media and calls are <strong>end-to-end encrypted</strong>; EXIF metadata is stripped from images.</li>
+      <li>Optional internet mode relays encrypted data through <strong>third-party public Nostr relays</strong>, which can see your IP address (use the built-in Tor option to hide it).</li>
+      <li>Location is sent only when you explicitly share it.</li>
+    </ul>
+
+    <p style="margin-top:40px;"><a href="./index.html">← nemix トップへ戻る</a></p>
+  </main>
+</body>
+</html>
