@@ -39,19 +39,21 @@ jobs:
       - name: Verify native library checksums
         run: tools/arti-build/verify-checksums.sh
 
-      - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
+      - name: Build debug APKs (fdroid + play)
+        run: ./gradlew :app:assembleFdroidDebug :app:assemblePlayDebug --stacktrace
 
       - uses: actions/upload-artifact@v4
         with:
           name: nemix-android-debug
-          path: bitchat-android/app/build/outputs/apk/debug/app-universal-debug.apk
+          path: |
+            bitchat-android/app/build/outputs/apk/fdroid/debug/app-fdroid-universal-debug.apk
+            bitchat-android/app/build/outputs/apk/play/debug/app-play-universal-debug.apk
           retention-days: 14
 
       # Upstream test suite. Reported but not yet blocking while nemix changes settle.
       - name: Unit tests
         continue-on-error: true
-        run: ./gradlew :app:testDebugUnitTest
+        run: ./gradlew :app:testFdroidDebugUnitTest
 
       - name: Upload test report
         if: always()
@@ -108,8 +110,9 @@ jobs:
           # Pinned into BuildConfig so in-app APK downloads only accept nemix-signed releases.
           echo "BITCHAT_GITHUB_RELEASE_CERT_SHA256=$FP" >> "$GITHUB_ENV"
 
+      # GitHub Releases ship the privacy (fdroid) build: no Google proprietary libraries.
       - name: Build release APKs
-        run: ./gradlew :app:assembleRelease --stacktrace
+        run: ./gradlew :app:assembleFdroidRelease --stacktrace
 
       - name: Align and sign
         env:
@@ -119,7 +122,7 @@ jobs:
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           mkdir -p "$RUNNER_TEMP/out"
           for abi in universal arm64-v8a armeabi-v7a x86_64 x86; do
-            IN="app/build/outputs/apk/release/app-$abi-release-unsigned.apk"
+            IN="app/build/outputs/apk/fdroid/release/app-fdroid-$abi-release-unsigned.apk"
             [ -f "$IN" ] || { echo "::error::missing $IN"; exit 1; }
             OUT="$RUNNER_TEMP/out/nemix-android-$abi.apk"
             "$BT/zipalign" -P 16 -f 4 "$IN" "$RUNNER_TEMP/aligned.apk"

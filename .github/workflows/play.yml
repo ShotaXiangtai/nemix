@@ -53,15 +53,16 @@ jobs:
             -alias "$ANDROID_KEY_ALIAS" | sed -nE 's/^[[:space:]]*SHA256:[[:space:]]*//p' | head -1)
           echo "BITCHAT_GITHUB_RELEASE_CERT_SHA256=$FP" >> "$GITHUB_ENV"
 
+      # Google Play ships the play flavor (Google ML Kit + Play Services location).
       - name: Build AAB
-        run: ./gradlew :app:bundleRelease --stacktrace
+        run: ./gradlew :app:bundlePlayRelease --stacktrace
 
       - name: Sign AAB
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
-          AAB=app/build/outputs/bundle/release/app-release.aab
+          AAB=app/build/outputs/bundle/playRelease/app-play-release.aab
           jarsigner -sigalg SHA256withRSA -digestalg SHA-256 \
             -keystore "$RUNNER_TEMP/release.jks" -storepass:env ANDROID_KEYSTORE_PASSWORD \
             -signedjar "$RUNNER_TEMP/nemix-android.aab" "$AAB" "$ANDROID_KEY_ALIAS"
@@ -74,7 +75,7 @@ jobs:
           name: nemix-android-aab
           path: |
             bitchat-android/app/build/nemix-android.aab
-            bitchat-android/app/build/outputs/mapping/release/mapping.txt
+            bitchat-android/app/build/outputs/mapping/playRelease/mapping.txt
           retention-days: 30
 
       - name: Upload to Google Play
@@ -84,6 +85,6 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: im.nemix.android
           releaseFiles: bitchat-android/app/build/nemix-android.aab
-          mappingFile: bitchat-android/app/build/outputs/mapping/release/mapping.txt
+          mappingFile: bitchat-android/app/build/outputs/mapping/playRelease/mapping.txt
           track: ${{ inputs.track }}
           status: completed

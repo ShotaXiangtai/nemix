@@ -59,6 +59,23 @@ android {
         includeInBundle = false
     }
 
+    // Two distributions from one codebase:
+    // - play:   Google Play build that uses Google ML Kit (QR scanning) and
+    //           Google Play Services (fused location).
+    // - fdroid: privacy build with no Google proprietary libraries (ZXing,
+    //           Android LocationManager). Used for F-Droid and GitHub Releases.
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("play") {
+            dimension = "distribution"
+            buildConfigField("String", "DISTRIBUTION", "\"play\"")
+        }
+        create("fdroid") {
+            dimension = "distribution"
+            buildConfigField("String", "DISTRIBUTION", "\"fdroid\"")
+        }
+    }
+
     buildTypes {
         debug {
             ndk {
@@ -159,7 +176,9 @@ dependencies {
 
     // QR
     implementation(libs.zxing.core)
-    implementation(libs.mlkit.barcode.scanning)
+    // Google proprietary libraries: Google Play build only
+    "playImplementation"(libs.mlkit.barcode.scanning)
+    "playImplementation"(libs.gms.location)
 
     // CameraX
     implementation(libs.androidx.camera.camera2)
@@ -194,7 +213,6 @@ dependencies {
     // Note: AAR is kept in libs/ for reference, but libraries loaded from jniLibs/
 
     // Google Play Services Location
-    implementation(libs.gms.location)
 
     // Security preferences
     implementation(libs.androidx.security.crypto)

@@ -14,7 +14,8 @@ nemix は bitchat プロジェクトとは無関係の独立したプロジェ�
 ## ビルド
 
 ```sh
-./gradlew :app:assembleDebug
+./gradlew :app:assembleFdroidDebug   # プライバシー版（Google のライブラリなし）
+./gradlew :app:assemblePlayDebug     # Google Play 版
 ```
 
 JDK 21 と Android SDK が必要です。Windows でパスに日本語などの非ASCII文字が含まれる場合は
