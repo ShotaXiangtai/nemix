@@ -86,6 +86,8 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
+      # Archive unsigned; the export step signs with an Apple-managed distribution
+      # certificate, so no registered device or local certificate is needed.
       - name: Archive
         run: |
           set -o pipefail
@@ -93,13 +95,8 @@ jobs:
             -project Nemix.xcodeproj -scheme Nemix -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath "$RUNNER_TEMP/Nemix.xcarchive" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath "$ASC_KEY_PATH" \
-            -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
+            CODE_SIGNING_ALLOWED=NO \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" 2>&1 | tee archive.log | grep -E "error:|ARCHIVE (SUCCEEDED|FAILED)" || true
           grep -q "ARCHIVE SUCCEEDED" archive.log
 
