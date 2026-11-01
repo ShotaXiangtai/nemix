@@ -25,9 +25,9 @@ public struct GroupTopicsView: View {
         ZStack {
             LiquidMeshBackground()
 
-            VStack(spacing = 0) {
+            VStack(spacing: 0) {
                 // Top Custom Navigation Bar matching Screenshot 2
-                HStack(spacing = 12) {
+                HStack(spacing: 12) {
                     Button(action: { dismiss() }) {
                         Image(systemName: "arrow.left")
                             .font(.system(size: 18, weight: .bold))
@@ -78,13 +78,13 @@ public struct GroupTopicsView: View {
 
                 // Topic Items List matching Screenshot 2
                 ScrollView {
-                    LazyVStack(spacing = 10) {
+                    LazyVStack(spacing: 10) {
                         ForEach(group.channels) { channel in
                             Button(action: {
                                 selectedChannel = channel
                                 isNavigatingToChat = true
                             }) {
-                                HStack(spacing = 14) {
+                                HStack(spacing: 14) {
                                     // Topic Icon
                                     ZStack {
                                         Circle()

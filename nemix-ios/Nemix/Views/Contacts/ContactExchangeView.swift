@@ -28,7 +28,7 @@ public struct ContactExchangeView: View {
         ZStack {
             LiquidMeshBackground()
 
-            VStack(spacing = 0) {
+            VStack(spacing: 0) {
                 // Sheet Top Bar
                 HStack {
                     Text("QR・URLで連絡先交換")
@@ -55,7 +55,7 @@ public struct ContactExchangeView: View {
                 .padding(.bottom, 14)
 
                 ScrollView {
-                    VStack(spacing = 16) {
+                    VStack(spacing: 16) {
                         if activeTab == 0 {
                             myQrSection
                         } else {
@@ -91,9 +91,9 @@ public struct ContactExchangeView: View {
         let nemixUri = ContactExchangeManager.shared.payloadToNemixUri(invite)
         let webUrl = ContactExchangeManager.shared.payloadToWebUrl(invite)
 
-        return VStack(spacing = 16) {
+        return VStack(spacing: 16) {
             // Type Selector: Permanent vs Expiring
-            HStack(spacing = 10) {
+            HStack(spacing: 10) {
                 Button(action: {
                     selectedType = .permanent
                 }) {
@@ -135,7 +135,7 @@ public struct ContactExchangeView: View {
 
             // Duration selector if Expiring
             if selectedType == .expiring {
-                HStack(spacing = 8) {
+                HStack(spacing: 8) {
                     ForEach([
                         (600.0, "10分"),
                         (3600.0, "1時間"),
@@ -192,7 +192,7 @@ public struct ContactExchangeView: View {
             }
 
             // Copy & Share URL Buttons
-            HStack(spacing = 12) {
+            HStack(spacing: 12) {
                 LiquidGlassButton(title: "URLをコピー", icon: "doc.on.doc", accent: LiquidGlassTheme.secondaryAccent) {
                     UIPasteboard.general.string = webUrl
                     let generator = UINotificationFeedbackGenerator()
@@ -213,7 +213,7 @@ public struct ContactExchangeView: View {
 
             if selectedType == .permanent {
                 Button(action: { showRevokeAlert = true }) {
-                    HStack(spacing = 6) {
+                    HStack(spacing: 6) {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .font(.system(size: 13))
                         Text("リンク・QRコードを再発行する（以前のリンクを無効化）")
@@ -227,7 +227,7 @@ public struct ContactExchangeView: View {
     }
 
     private var importContactSection: some View {
-        VStack(spacing = 16) {
+        VStack(spacing: 16) {
             LiquidGlassCard {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("友人の招待URLまたはコードを入力")

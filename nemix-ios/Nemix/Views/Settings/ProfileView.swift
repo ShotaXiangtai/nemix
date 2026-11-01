@@ -12,7 +12,7 @@ public struct ProfileView: View {
             ZStack {
                 LiquidMeshBackground()
 
-                VStack(spacing = 16) {
+                VStack(spacing: 16) {
                     HStack {
                         Text("プロフィール")
                             .font(.system(size: 24, weight: .black, design: .rounded))
@@ -23,7 +23,7 @@ public struct ProfileView: View {
                     .padding(.top, 12)
 
                     ScrollView {
-                        VStack(spacing = 20) {
+                        VStack(spacing: 20) {
                             // Avatar
                             ZStack {
                                 Circle()

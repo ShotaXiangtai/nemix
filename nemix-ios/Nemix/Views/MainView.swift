@@ -32,7 +32,7 @@ public struct MainView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             // Floating Liquid Glass Bottom Tab Bar (matching Screenshots 1 & 2)
-            HStack(spacing = 0) {
+            HStack(spacing: 0) {
                 tabItem(icon: "message.fill", title: "チャット", tab: .chats)
                 tabItem(icon: "person.2.fill", title: "連絡先", tab: .contacts)
                 tabItem(icon: "gearshape.fill", title: "設定", tab: .settings)
@@ -61,7 +61,7 @@ public struct MainView: View {
             generator.selectionChanged()
             appState.selectedTab = tab
         }) {
-            VStack(spacing = 4) {
+            VStack(spacing: 4) {
                 ZStack {
                     if isSelected {
                         Capsule()

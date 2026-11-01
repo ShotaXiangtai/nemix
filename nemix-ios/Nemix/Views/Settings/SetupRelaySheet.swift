@@ -20,9 +20,9 @@ public struct SetupRelaySheet: View {
         ZStack {
             LiquidMeshBackground()
 
-            VStack(spacing = 20) {
+            VStack(spacing: 20) {
                 // Header
-                VStack(spacing = 8) {
+                VStack(spacing: 8) {
                     ZStack {
                         Circle()
                             .fill(LiquidGlassTheme.primaryAccent.opacity(0.2))
@@ -45,9 +45,9 @@ public struct SetupRelaySheet: View {
                 .padding(.top, 24)
 
                 // Choice Cards
-                VStack(spacing = 12) {
+                VStack(spacing: 12) {
                     Button(action: { isRelaySelected = true }) {
-                        HStack(spacing = 14) {
+                        HStack(spacing: 14) {
                             Image(systemName: isRelaySelected ? "checkmark.circle.fill" : "circle")
                                 .font(.system(size: 20))
                                 .foregroundColor(isRelaySelected ? LiquidGlassTheme.primaryAccent : .white.opacity(0.4))
@@ -68,7 +68,7 @@ public struct SetupRelaySheet: View {
                     .buttonStyle(.plain)
 
                     Button(action: { isRelaySelected = false }) {
-                        HStack(spacing = 14) {
+                        HStack(spacing: 14) {
                             Image(systemName: !isRelaySelected ? "checkmark.circle.fill" : "circle")
                                 .font(.system(size: 20))
                                 .foregroundColor(!isRelaySelected ? LiquidGlassTheme.secondaryAccent : .white.opacity(0.4))
@@ -93,7 +93,7 @@ public struct SetupRelaySheet: View {
                 // Pros & Cons Card
                 LiquidGlassCard {
                     VStack(alignment: .leading, spacing: 10) {
-                        HStack(spacing = 6) {
+                        HStack(spacing: 6) {
                             Image(systemName: "hand.thumbsup.fill")
                                 .foregroundColor(LiquidGlassTheme.primaryAccent)
                             Text("【メリット】")
@@ -107,7 +107,7 @@ public struct SetupRelaySheet: View {
 
                         Divider().background(Color.white.opacity(0.2))
 
-                        HStack(spacing = 6) {
+                        HStack(spacing: 6) {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundColor(Color.orange)
                             Text("【留意点（デメリット）】")

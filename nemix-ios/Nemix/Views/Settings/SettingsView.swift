@@ -17,7 +17,7 @@ public struct SettingsView: View {
             ZStack {
                 LiquidMeshBackground()
 
-                VStack(spacing = 14) {
+                VStack(spacing: 14) {
                     HStack {
                         Text("設定")
                             .font(.system(size: 24, weight: .black, design: .rounded))
@@ -28,7 +28,7 @@ public struct SettingsView: View {
                     .padding(.top, 12)
 
                     ScrollView {
-                        VStack(spacing = 14) {
+                        VStack(spacing: 14) {
                             // P2P Relay Node Card with Pros & Cons
                             LiquidGlassCard {
                                 VStack(alignment: .leading, spacing: 10) {
@@ -89,7 +89,7 @@ public struct SettingsView: View {
 
                             // QR & URL Contact Exchange Action Row
                             Button(action: { showContactExchange = true }) {
-                                HStack(spacing = 14) {
+                                HStack(spacing: 14) {
                                     Image(systemName: "qrcode.viewfinder")
                                         .foregroundColor(LiquidGlassTheme.primaryAccent)
                                         .font(.system(size: 18))
@@ -112,7 +112,7 @@ public struct SettingsView: View {
 
                             // Terms of Service & Privacy Policy Row
                             Button(action: { showTermsSheet = true }) {
-                                HStack(spacing = 14) {
+                                HStack(spacing: 14) {
                                     Image(systemName: "doc.text.fill")
                                         .foregroundColor(Color.white.opacity(0.8))
                                         .font(.system(size: 18))
@@ -173,7 +173,7 @@ struct TermsSheetView: View {
     var body: some View {
         ZStack {
             LiquidMeshBackground()
-            VStack(spacing = 16) {
+            VStack(spacing: 16) {
                 HStack {
                     Text("利用規約・免責事項")
                         .font(.system(size: 18, weight: .bold, design: .rounded))

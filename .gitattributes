@@ -1,0 +1,17 @@
+# Store text files with LF in the repository on every platform.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.webp binary
+*.so binary
+*.jar binary
+*.ttf binary
+*.otf binary
+
+# Kept byte-identical to upstream bitchat-android (stored with CRLF there)
+bitchat-android/gradlew.bat -text
+bitchat-android/app/src/main/assets/nostr_relays.csv -text

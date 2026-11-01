@@ -24,10 +24,10 @@ public struct ChatsListView: View {
             ZStack {
                 LiquidMeshBackground()
 
-                VStack(spacing = 0) {
+                VStack(spacing: 0) {
                     // Header Bar
                     HStack {
-                        HStack(spacing = 8) {
+                        HStack(spacing: 8) {
                             Text("nemix")
                                 .font(.system(size: 24, weight: .black, design: .rounded))
                                 .foregroundColor(.white)
@@ -55,7 +55,7 @@ public struct ChatsListView: View {
 
                     // Filter Pills matching Screenshot 1
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing = 8) {
+                        HStack(spacing: 8) {
                             ForEach(HomeFilter.allCases, id: \.self) { filter in
                                 Button(action: {
                                     let generator = UISelectionFeedbackGenerator()
@@ -84,7 +84,7 @@ public struct ChatsListView: View {
 
                     // Chat List
                     ScrollView {
-                        LazyVStack(spacing = 8) {
+                        LazyVStack(spacing: 8) {
                             // Pinned "已归档的聊天 / アーカイブしたチャット" row (Screenshot 1 top item)
                             ArchivedChatRow(archivedCount: 1)
                                 .padding(.horizontal, 14)
@@ -182,7 +182,7 @@ struct ArchivedChatRow: View {
     let archivedCount: Int
 
     var body: some View {
-        HStack(spacing = 14) {
+        HStack(spacing: 14) {
             ZStack {
                 Circle()
                     .fill(Color.blue.opacity(0.2))
@@ -225,7 +225,7 @@ struct ConversationRow: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing = 14) {
+            HStack(spacing: 14) {
                 // Avatar Circle
                 ZStack {
                     Circle()

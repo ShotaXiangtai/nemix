@@ -11,6 +11,11 @@ GPL-3.0 第5条(a) に基づく改変表示です。This file is the modificatio
 
 ## 変更されたファイル / Modified files
 
+- `README.md`
+- `app/src/main/java/com/bitchat/android/util/ApkDownloadSource.kt`
+- `app/src/main/java/com/bitchat/android/util/GitHubReleaseClient.kt`
+- `app/src/test/kotlin/com/bitchat/android/util/ApkDownloadSourceTest.kt`
+- `app/src/test/kotlin/com/bitchat/android/util/GitHubReleaseClientTest.kt`
 - `app/build.gradle.kts`
 - `app/src/debug/AndroidManifest.xml`
 - `app/src/debug/java/com/bitchat/android/testhook/TestHookReceiver.kt`
@@ -101,6 +106,7 @@ GPL-3.0 第5条(a) に基づく改変表示です。This file is the modificatio
 
 ## nemix で追加されたファイル / Files added by nemix
 
+- `NEMIX_CHANGES.md`
 - `NEMIX_CHANGES.md`
 - `app/src/main/java/com/bitchat/android/call/NemixConnectionService.kt`
 - `app/src/main/java/com/bitchat/android/call/WirelessCallManager.kt`

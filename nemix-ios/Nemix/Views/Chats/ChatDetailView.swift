@@ -31,9 +31,9 @@ public struct ChatDetailView: View {
         ZStack {
             LiquidMeshBackground()
 
-            VStack(spacing = 0) {
+            VStack(spacing: 0) {
                 // Top Custom Navigation Bar matching Screenshot 3
-                HStack(spacing = 12) {
+                HStack(spacing: 12) {
                     Button(action: { dismiss() }) {
                         Image(systemName: "arrow.left")
                             .font(.system(size: 18, weight: .bold))
@@ -91,12 +91,12 @@ public struct ChatDetailView: View {
 
                 ScrollViewReader { proxy in
                     ScrollView {
-                        LazyVStack(spacing = 10) {
+                        LazyVStack(spacing: 10) {
                             if msgs.isEmpty {
                                 // Center Celebration Card matching Screenshot 3
                                 Spacer(minLength: 120)
 
-                                VStack(spacing = 12) {
+                                VStack(spacing: 12) {
                                     Text("🎉")
                                         .font(.system(size: 48))
 
@@ -135,7 +135,7 @@ public struct ChatDetailView: View {
                 }
 
                 // Bottom Input Bar matching Screenshot 3
-                HStack(spacing = 10) {
+                HStack(spacing: 10) {
                     Button(action: { showAttachmentOptions = true }) {
                         Image(systemName: "paperclip")
                             .font(.system(size: 20))

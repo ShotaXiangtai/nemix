@@ -18,7 +18,7 @@ public struct ContactsView: View {
             ZStack {
                 LiquidMeshBackground()
 
-                VStack(spacing = 14) {
+                VStack(spacing: 14) {
                     // Top Bar
                     HStack {
                         Text("連絡先")
@@ -30,10 +30,10 @@ public struct ContactsView: View {
                     .padding(.top, 12)
 
                     ScrollView {
-                        VStack(spacing = 14) {
+                        VStack(spacing: 14) {
                             // Hero Contact Exchange Card
                             Button(action: { showContactExchange = true }) {
-                                HStack(spacing = 14) {
+                                HStack(spacing: 14) {
                                     ZStack {
                                         Circle()
                                             .fill(LiquidGlassTheme.primaryAccent.opacity(0.25))
@@ -73,7 +73,7 @@ public struct ContactsView: View {
                                         Button(action: {
                                             UIPasteboard.general.string = appState.myUuid
                                         }) {
-                                            HStack(spacing = 4) {
+                                            HStack(spacing: 4) {
                                                 Image(systemName: "doc.on.doc")
                                                 Text("コピー")
                                             }
@@ -100,7 +100,7 @@ public struct ContactsView: View {
                                         selectedContactToChat = contact
                                         isNavigatingToChat = true
                                     }) {
-                                        HStack(spacing = 12) {
+                                        HStack(spacing: 12) {
                                             ZStack(alignment: .bottomTrailing) {
                                                 Circle()
                                                     .fill(LiquidGlassTheme.secondaryAccent)
