@@ -100,7 +100,7 @@ jobs:
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" 2>&1 | tee archive.log | grep -E "error:|ARCHIVE (SUCCEEDED|FAILED)" || true
           grep -q "ARCHIVE SUCCEEDED" archive.log
 
-      - name: Upload to App Store Connect
+      - name: Export signed IPA
         run: |
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
@@ -108,7 +108,7 @@ jobs:
           <plist version="1.0">
           <dict>
             <key>method</key><string>app-store-connect</string>
-            <key>destination</key><string>upload</string>
+            <key>destination</key><string>export</string>
             <key>teamID</key><string>${APPLE_TEAM_ID}</string>
             <key>signingStyle</key><string>automatic</string>
             <key>manageAppVersionAndBuildNumber</key><false/>
@@ -123,12 +123,23 @@ jobs:
             -allowProvisioningUpdates \
             -authenticationKeyPath "$ASC_KEY_PATH" \
             -authenticationKeyID "$ASC_KEY_ID" \
-            -authenticationKeyIssuerID "$ASC_ISSUER_ID" 2>&1 | tee export.log | grep -E "error:|EXPORT (SUCCEEDED|FAILED)|Upload" || true
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" 2>&1 | tee export.log | grep -E "error:|EXPORT (SUCCEEDED|FAILED)" || true
           grep -q "EXPORT SUCCEEDED" export.log
+          ls -la "$RUNNER_TEMP/export"
+
+      - name: Upload to App Store Connect
+        run: |
+          # altool looks for the key as ~/.appstoreconnect/private_keys/AuthKey_<id>.p8
+          mkdir -p ~/.appstoreconnect/private_keys
+          cp "$ASC_KEY_PATH" ~/.appstoreconnect/private_keys/
+          IPA=$(ls "$RUNNER_TEMP"/export/*.ipa | head -1)
+          xcrun altool --upload-app --type ios --file "$IPA" \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee upload.log
+          grep -qiE "No errors uploading|UPLOAD SUCCEEDED" upload.log
 
       - name: Remove API key
         if: always()
-        run: rm -f "$ASC_KEY_PATH"
+        run: rm -f "$ASC_KEY_PATH" ~/.appstoreconnect/private_keys/*.p8
 
       - name: Upload logs
         if: failure()
