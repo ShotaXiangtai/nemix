@@ -1,0 +1,17 @@
+// Cloudflare Workers static site for https://nemi-x.com
+// Deployed automatically from GitHub (Workers Builds) on push to main.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "nemix-website",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./website",
+    "not_found_handling": "404-page"
+  },
+  "routes": [
+    { "pattern": "nemi-x.com", "custom_domain": true },
+    { "pattern": "www.nemi-x.com", "custom_domain": true }
+  ],
+  "workers_dev": false,
+  "preview_urls": true
+}

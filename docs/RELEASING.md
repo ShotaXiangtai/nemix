@@ -50,9 +50,11 @@ Windows 版の Sideloadly などのツールで、未署名 IPA を自分の App
 
 ### TestFlight / App Store
 
-Apple Developer Program（年額）への登録が必要です。登録後、App Store Connect API キーと配布用証明書を
-GitHub Secrets に登録すれば、CI から TestFlight にアップロードするジョブを追加できます。
+Actions の **iOS TestFlight** ワークフローからアップロードできます。準備の手順は [STORE_RELEASE.md](STORE_RELEASE.md) を参照してください。
 
 ## Website
 
-`website/` を `main` に push すると [Website ワークフロー](../.github/workflows/pages.yml) が GitHub Pages に公開します。
+`website/` は Cloudflare Workers の静的アセットとして https://nemi-x.com で公開しています（設定は [`wrangler.jsonc`](../wrangler.jsonc)）。
+Cloudflare の Workers Builds が GitHub と連携しており、`main` に push すると自動でデプロイされます。
+
+手動でデプロイする場合: `npx wrangler deploy`

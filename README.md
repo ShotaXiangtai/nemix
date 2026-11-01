@@ -14,7 +14,7 @@
 |---|---|---|
 | [`bitchat-android/`](bitchat-android/) | Android アプリ（メイン実装） | 開発中・最優先 |
 | [`nemix-ios/`](nemix-ios/) | iOS アプリ（SwiftUI） | 開発中・CI でビルド検証 |
-| [`website/`](website/) | 公式サイト（GitHub Pages） | 公開 |
+| [`website/`](website/) | 公式サイト（https://nemi-x.com 、Cloudflare Workers） | 公開 |
 | [`TERMS_OF_SERVICE.md`](TERMS_OF_SERVICE.md) | 利用規約 | |
 | [`PRIVACY_POLICY.md`](PRIVACY_POLICY.md) | プライバシーポリシー | |
 

@@ -21,3 +21,7 @@ build/
 *.apk
 *.aab
 *.ipa
+
+# Cloudflare Wrangler local state
+.wrangler/
+node_modules/

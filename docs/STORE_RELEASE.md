@@ -56,7 +56,7 @@ gh secret set PLAY_SERVICE_ACCOUNT_JSON -R ShotaXiangtai/nemix < service-account
 | アイコン | 512×512（同フォルダの `images/icon.png`） |
 | スクリーンショット | スマホ用を最低2枚（実機で撮影してください） |
 | フィーチャーグラフィック | 1024×500 |
-| プライバシーポリシー | https://shotaxiangtai.github.io/nemix/privacy.html |
+| プライバシーポリシー | https://nemi-x.com/privacy |
 | 広告 | なし |
 | 対象年齢 | 13歳以上 |
 | コンテンツのレーティング | アンケートで「ユーザー同士がやり取りできる」に該当すると回答 |
