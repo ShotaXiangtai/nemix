@@ -61,7 +61,8 @@ nemix（以下「本アプリ」）は、中央サーバーを持たない P2P �
 
 ## 9. お問い合わせ
 
-GitHub の Issues からご連絡ください: https://github.com/ShotaXiangtai/nemix/issues
+- メール: support@nemi-x.com
+- GitHub Issues: https://github.com/ShotaXiangtai/nemix/issues
 
 ---
 

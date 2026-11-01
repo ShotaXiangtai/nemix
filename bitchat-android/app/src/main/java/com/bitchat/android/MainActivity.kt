@@ -719,6 +719,7 @@ class MainActivity : OrientationAwareActivity() {
                 // Handle any notification intent
                 handleNotificationIntent(intent)
                 handleVerificationIntent(intent)
+                handleContactInviteIntent(intent)
 
                 // Small delay to ensure mesh service is fully initialized
                 delay(500)
@@ -748,6 +749,7 @@ class MainActivity : OrientationAwareActivity() {
         if (mainViewModel.onboardingState.value == OnboardingState.COMPLETE) {
             handleNotificationIntent(intent)
             handleVerificationIntent(intent)
+            handleContactInviteIntent(intent)
         }
     }
 
@@ -867,6 +869,11 @@ class MainActivity : OrientationAwareActivity() {
                 }
             }
         }
+    }
+
+    private fun handleContactInviteIntent(intent: Intent) {
+        val uri = intent.data ?: return
+        com.bitchat.android.contact.ContactExchangeManager.offerIncomingInvite(uri)
     }
 
     private fun handleVerificationIntent(intent: Intent) {

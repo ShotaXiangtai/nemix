@@ -43,27 +43,55 @@ import java.util.*
  * 100% P2P Serverless Contact Exchange Sheet via QR Code & URL:
  * - Permanent QR/URL (with instant revocation & reissue button)
  * - Expiring QR/URL (10 min / 1 hr / 24 hr)
- * - Deep Link URI (nemix://contact/add) & Web Share URL (https://nemix.im/c)
+ * - Deep Link URI (nemix://contact/add) & Web Share URL (https://nemi-x.com/c)
  * - QR Scanner & URL manual input importer
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactExchangeSheet(
     onDismiss: () -> Unit,
-    onContactAdded: (peerId: String) -> Unit = {}
+    onContactAdded: (peerId: String) -> Unit = {},
+    initialInviteUrl: String? = null
 ) {
     val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
 
-    var activeTab by remember { mutableStateOf(0) } // 0: Share My Contact, 1: Import Contact
+    var activeTab by remember { mutableStateOf(if (initialInviteUrl != null) 1 else 0) } // 0: Share My Contact, 1: Import Contact
     var selectedType by remember { mutableStateOf(ContactExchangeManager.InviteType.PERMANENT) }
     var selectedDurationMs by remember { mutableStateOf(3600_000L) } // 1 hour default
     var showRevokeConfirmDialog by remember { mutableStateOf(false) }
 
     // Manual input state
-    var manualInputUrl by remember { mutableStateOf("") }
+    var manualInputUrl by remember { mutableStateOf(initialInviteUrl.orEmpty()) }
     var parsedPayload by remember { mutableStateOf<ContactExchangeManager.ContactInvitePayload?>(null) }
     var parseError by remember { mutableStateOf<String?>(null) }
+
+    fun validateManualInput() {
+        when (val result = ContactExchangeManager.validateAndParse(manualInputUrl)) {
+            is ContactExchangeManager.ValidationResult.Valid -> {
+                parsedPayload = result.payload
+                parseError = null
+            }
+            is ContactExchangeManager.ValidationResult.Expired -> {
+                val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault())
+                parseError = "この招待リンクは有効期限が切れています (${sdf.format(Date(result.expiredAtMs))})"
+                parsedPayload = null
+            }
+            is ContactExchangeManager.ValidationResult.Revoked -> {
+                parseError = "この招待リンクは相手側による再発行のため無効化されています"
+                parsedPayload = null
+            }
+            is ContactExchangeManager.ValidationResult.Error -> {
+                parseError = result.message
+                parsedPayload = null
+            }
+        }
+    }
+
+    // A tapped invite link opens this sheet pre-filled: validate it right away.
+    LaunchedEffect(initialInviteUrl) {
+        if (!initialInviteUrl.isNullOrBlank()) validateManualInput()
+    }
 
     val permanentSalt by ContactExchangeManager.permanentSalt.collectAsStateWithLifecycle()
 
@@ -353,7 +381,7 @@ fun ContactExchangeSheet(
                                 parseError = null
                                 parsedPayload = null
                             },
-                            placeholder = { Text("nemix://contact/add?... または https://nemix.im/c#...", fontSize = 12.sp) },
+                            placeholder = { Text("nemix://contact/add?... または https://nemi-x.com/c#...", fontSize = 12.sp) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
@@ -364,27 +392,7 @@ fun ContactExchangeSheet(
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Button(
-                            onClick = {
-                                when (val result = ContactExchangeManager.validateAndParse(manualInputUrl)) {
-                                    is ContactExchangeManager.ValidationResult.Valid -> {
-                                        parsedPayload = result.payload
-                                        parseError = null
-                                    }
-                                    is ContactExchangeManager.ValidationResult.Expired -> {
-                                        val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault())
-                                        parseError = "この招待リンクは有効期限が切れています (${sdf.format(Date(result.expiredAtMs))})"
-                                        parsedPayload = null
-                                    }
-                                    is ContactExchangeManager.ValidationResult.Revoked -> {
-                                        parseError = "この招待リンクは相手側による再発行のため無効化されています"
-                                        parsedPayload = null
-                                    }
-                                    is ContactExchangeManager.ValidationResult.Error -> {
-                                        parseError = result.message
-                                        parsedPayload = null
-                                    }
-                                }
-                            },
+                            onClick = { validateManualInput() },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = ClassicColors.Teal),
                             enabled = manualInputUrl.isNotBlank()

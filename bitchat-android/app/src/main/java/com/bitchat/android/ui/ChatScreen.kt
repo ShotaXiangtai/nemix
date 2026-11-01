@@ -13,6 +13,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bitchat.android.R
 import com.bitchat.android.call.WirelessCallOverlay
+import com.bitchat.android.contact.ContactExchangeManager
 import com.bitchat.android.groups.P2PGroupManager
 import com.bitchat.android.legal.TermsOfServiceManager
 import com.bitchat.android.profile.ProfileSetupDialog
@@ -49,6 +50,7 @@ fun ChatScreen(viewModel: ChatViewModel) {
 
     val isProfileSetupCompleted by UserProfileManager.isSetupCompleted.collectAsStateWithLifecycle()
     val isTosAccepted by TermsOfServiceManager.acceptedFlow.collectAsStateWithLifecycle()
+    val incomingInvite by ContactExchangeManager.pendingIncomingInvite.collectAsStateWithLifecycle()
 
     var showPanicConfirmation by remember { mutableStateOf(false) }
     var showDebugSheet by remember { mutableStateOf(false) }
@@ -183,6 +185,17 @@ fun ChatScreen(viewModel: ChatViewModel) {
                     }
                 }
             }
+        }
+    }
+
+    // Contact invite link tapped outside the app (nemix://contact/... or https://nemi-x.com/c#...)
+    val invite = incomingInvite
+    if (invite != null && isProfileSetupCompleted && isTosAccepted) {
+        key(invite) {
+            ContactExchangeSheet(
+                onDismiss = { ContactExchangeManager.consumeIncomingInvite() },
+                initialInviteUrl = invite
+            )
         }
     }
 

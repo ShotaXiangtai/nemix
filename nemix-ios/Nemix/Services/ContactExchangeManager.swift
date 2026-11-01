@@ -7,6 +7,17 @@ import CoreImage.CIFilterBuiltins
 public enum InviteType: String, Codable {
     case permanent = "perm"
     case expiring = "exp"
+
+    // Also accept the older Android values "PERMANENT" / "EXPIRING".
+    public init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        switch raw.lowercased() {
+        case "perm", "permanent": self = .permanent
+        case "exp", "expiring": self = .expiring
+        default:
+            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Unknown invite type \(raw)"))
+        }
+    }
 }
 
 public struct ContactInvitePayload: Codable {
@@ -33,7 +44,7 @@ public final class ContactExchangeManager: ObservableObject {
 
     public static let schemeNemix = "nemix"
     public static let hostContact = "contact"
-    public static let webPrefix = "https://nemix.im/c#"
+    public static let webPrefix = "https://nemi-x.com/c#"
 
     private let userDefaultsKeySalt = "nemix_ios_permanent_salt"
     @Published public private(set) var permanentSalt: String = ""

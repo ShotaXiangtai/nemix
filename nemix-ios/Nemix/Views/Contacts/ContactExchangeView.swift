@@ -5,7 +5,7 @@ import SwiftUI
 // - Permanent QR / URL with instant reissuance (revoking older links)
 // - Expiring QR / URL (10m / 1h / 24h)
 // - Real-time CoreImage QR generation with specular refractive frame
-// - Deep Link (nemix://contact/add) & Web Share (https://nemix.im/c)
+// - Deep Link (nemix://contact/add) & Web Share (https://nemi-x.com/c)
 // - 1-tap Copy & iOS Share Sheet
 
 public struct ContactExchangeView: View {
@@ -232,7 +232,7 @@ public struct ContactExchangeView: View {
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.white)
 
-                    TextField("nemix://contact/add?... または https://nemix.im/c#...", text: $manualInputUrl)
+                    TextField("nemix://contact/add?... または https://nemi-x.com/c#...", text: $manualInputUrl)
                         .font(.system(size: 13))
                         .foregroundColor(.white)
                         .padding(10)

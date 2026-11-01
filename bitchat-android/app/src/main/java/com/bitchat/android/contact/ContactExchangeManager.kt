@@ -16,6 +16,7 @@ import com.bitchat.android.services.AppStateStore
 import com.bitchat.android.services.ContactIdentityResolver
 import com.bitchat.android.util.hexEncodedString
 import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.coroutines.CoroutineScope
@@ -35,7 +36,7 @@ import java.util.UUID
  *   which immediately invalidates older QR codes / URLs.
  * - Time-Limited QR / URL: Preset expiration (10 min, 1 hr, 24 hr). Self-expires when current time > exp.
  * - Deep Link URI: `nemix://contact/add?v=1&name=...&pk=...&ed=...&uuid=...&type=perm|exp&exp=...&salt=...`
- * - Web URL: `https://nemix.im/c#v=1&name=...`
+ * - Web URL: `https://nemi-x.com/c#<base64url JSON>` (the fragment is never sent to the web server)
  */
 object ContactExchangeManager {
     private const val TAG = "ContactExchangeManager"
@@ -45,10 +46,37 @@ object ContactExchangeManager {
     const val SCHEME_NEMIX = "nemix"
     const val HOST_CONTACT = "contact"
     const val PATH_ADD = "/add"
-    const val WEB_INVITE_PREFIX = "https://nemix.im/c#"
+    const val WEB_HOST = "nemi-x.com"
+    const val WEB_INVITE_PATH = "/c"
+    const val WEB_INVITE_PREFIX = "https://$WEB_HOST$WEB_INVITE_PATH#"
 
+    // Invite link received from outside the app (tapped nemix:// or https://nemi-x.com/c#... link).
+    // The UI shows the import sheet pre-filled with it, then calls consumeIncomingInvite().
+    private val _pendingIncomingInvite = MutableStateFlow<String?>(null)
+    val pendingIncomingInvite: StateFlow<String?> = _pendingIncomingInvite.asStateFlow()
+
+    /** Returns true if [uri] is a nemix contact invite link this app can import. */
+    fun isInviteUri(uri: Uri): Boolean {
+        val scheme = uri.scheme?.lowercase() ?: return false
+        val host = uri.host?.lowercase() ?: return false
+        return (scheme == SCHEME_NEMIX && host == HOST_CONTACT) ||
+            (scheme == "https" && (host == WEB_HOST || host == "www.$WEB_HOST") &&
+                uri.path?.trimEnd('/') == WEB_INVITE_PATH && !uri.fragment.isNullOrBlank())
+    }
+
+    fun offerIncomingInvite(uri: Uri) {
+        if (isInviteUri(uri)) _pendingIncomingInvite.value = uri.toString()
+    }
+
+    fun consumeIncomingInvite() {
+        _pendingIncomingInvite.value = null
+    }
+
+    // JSON values "perm"/"exp" match the iOS client and the deep-link "type" parameter.
     enum class InviteType {
+        @SerializedName(value = "perm", alternate = ["PERMANENT"])
         PERMANENT,
+        @SerializedName(value = "exp", alternate = ["EXPIRING"])
         EXPIRING
     }
 
