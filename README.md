@@ -13,7 +13,7 @@
 | ディレクトリ | 内容 | 状態 |
 |---|---|---|
 | [`bitchat-android/`](bitchat-android/) | Android アプリ（メイン実装） | 開発中・最優先 |
-| [`nemix-ios/`](nemix-ios/) | iOS アプリ（SwiftUI） | 開発中・CI でビルド検証 |
+| [`nemix-ios/`](nemix-ios/) | iOS アプリ（上流 bitchat iOS ベース。Android と通信互換） | 開発中・TestFlight |
 | [`website/`](website/) | 公式サイト（https://nemi-x.com 、Cloudflare Workers） | 公開 |
 | [`TERMS_OF_SERVICE.md`](TERMS_OF_SERVICE.md) | 利用規約 | |
 | [`PRIVACY_POLICY.md`](PRIVACY_POLICY.md) | プライバシーポリシー | |

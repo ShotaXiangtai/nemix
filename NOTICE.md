@@ -32,8 +32,13 @@ libraries under `bitchat-android/tools/arti-build/`) keep their own licenses.
 
 ## iOS app
 
-The iOS app in [`nemix-ios/`](nemix-ios/) is original nemix code and is also
-distributed under GPL-3.0.
+The iOS app in [`nemix-ios/`](nemix-ios/) is based on the **bitchat** iOS app by
+permissionlesstech and contributors (https://github.com/permissionlesstech/bitchat),
+which is released into the public domain under the Unlicense
+([`nemix-ios/UPSTREAM-LICENSE`](nemix-ios/UPSTREAM-LICENSE)). It uses the same mesh and
+Nostr protocols as the Android app, so the two can talk to each other.
+Base commit: `04995f68e470a18d1fc99f86fa326c2a87bab4f2` (2026-10-25). The macOS target
+and macOS binaries were removed. nemix modifications are distributed under GPL-3.0.
 
 ## Website
 

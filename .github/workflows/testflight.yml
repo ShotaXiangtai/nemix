@@ -132,7 +132,7 @@ jobs:
           BUNDLE_ID: im.nemix.ios
           BUILD_NUMBER: ${{ github.run_number }}
         run: |
-          export APP_VERSION=$(sed -nE 's/^ *MARKETING_VERSION: *"?([^"]+)"?/\1/p' project.yml | head -1)
+          export APP_VERSION=$(sed -nE 's/^ *MARKETING_VERSION *= *([^ ]+).*/\1/p' Configs/Release.xcconfig | head -1)
           IPA=$(ls "$RUNNER_TEMP"/export/*.ipa | head -1)
           node ../.github/scripts/asc-upload.mjs "$IPA"
 
