@@ -1,1 +1,24 @@
-A secure, decentralized, peer-to-peer messaging app that works over Bluetooth mesh networks. No internet required, no servers, no phone numbers - just pure encrypted communication.
+nemix is a serverless, peer-to-peer, end-to-end encrypted messenger.
+
+WORKS OFFLINE
+Bluetooth LE and Wi-Fi Aware mesh networking lets you message nearby people directly, even without cellular service or in airplane mode.
+
+NO SERVERS
+There are no developer-run servers. No account and no phone number are required.
+
+PRIVACY
+- End-to-end encrypted messages, images, voice messages and calls
+- EXIF metadata (location, device info) is stripped from images before sending
+- No ads, no analytics, no tracking
+- Screenshot protection and delete-for-everyone
+
+FEATURES
+- Contact exchange by QR code or link, including expiring links
+- Encrypted P2P groups in stream or channel format
+- Share images, voice messages and location
+- Encrypted voice calls
+- Optional internet messaging through public Nostr relays
+
+OPEN SOURCE
+nemix is free software under GPL-3.0.
+https://github.com/ShotaXiangtai/nemix

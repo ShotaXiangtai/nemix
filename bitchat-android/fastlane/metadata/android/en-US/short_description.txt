@@ -1,1 +1,1 @@
-IRC style chat over Bluetooth mesh
+Serverless P2P encrypted messenger that works offline over Bluetooth mesh.

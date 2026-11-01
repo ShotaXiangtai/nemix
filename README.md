@@ -37,6 +37,11 @@ cd bitchat-android
 - `nemix-ios/` に変更を push すると [iOS ワークフロー](.github/workflows/ios.yml) がシミュレーター向けビルドと未署名 IPA を作成します
 - Mac がある場合: `cd nemix-ios && brew install xcodegen && xcodegen generate` で `Nemix.xcodeproj` を生成して Xcode で開きます
 
+## リリース
+
+- [docs/RELEASING.md](docs/RELEASING.md) — 署名鍵、GitHub Releases、Mac なしの iOS ビルド
+- [docs/STORE_RELEASE.md](docs/STORE_RELEASE.md) — Google Play（ベータ→正式）と TestFlight→App Store の公開手順
+
 ## ライセンス
 
 nemix は **GNU General Public License v3.0** で公開しています（[LICENSE](LICENSE)）。
