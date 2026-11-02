@@ -404,8 +404,8 @@ object P2PGroupManager {
         }.getOrElse { Base64.decode(encoded, Base64.DEFAULT) }
         val invite = gson.fromJson(String(bytes, StandardCharsets.UTF_8), GroupInvitePayload::class.java)
             ?: throw IllegalArgumentException("招待データを解析できませんでした")
-        if (invite.group.id.isBlank() || invite.group.groupKeyBase64.isBlank()) {
-            throw IllegalArgumentException("グループ暗号鍵が含まれていません")
+        if (sanitizeGroups(listOf(invite.group)).isEmpty()) {
+            throw IllegalArgumentException("招待データが壊れているか、グループ暗号鍵が含まれていません")
         }
         return invite
     }
@@ -885,7 +885,7 @@ object P2PGroupManager {
                     gson.fromJson(json, GroupInvitePayload::class.java)
                 }.getOrNull() ?: return
                 val incoming = invite.group
-                if (incoming.id.isBlank() || incoming.groupKeyBase64.isBlank()) return
+                if (sanitizeGroups(listOf(incoming)).isEmpty()) return
 
                 // Not a member yet: ask the user instead of joining automatically.
                 if (_groups.value.none { it.id == incoming.id }) {
@@ -1440,14 +1440,51 @@ object P2PGroupManager {
             val json = decryptWithGroupKey(keyB64, encrypted) ?: return
             val restored = gson.fromJson(json, PersistedGroupStore::class.java) ?: return
             synchronized(this) {
-                _groups.value = restored.groups.sortedByDescending { it.updatedAt }
-                _groupMessages.value = restored.messages
-                _unreadCounts.value = restored.unreadCounts
+                val validGroups = sanitizeGroups(restored.groups)
+                _groups.value = validGroups.sortedByDescending { it.updatedAt }
+                _groupMessages.value = sanitizeMessages(restored.messages, validGroups)
+                _unreadCounts.value = sanitizeUnread(restored.unreadCounts)
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed loading encrypted groups: ${e.message}")
         }
     }
+
+    // Gson fills non-null Kotlin fields with null when the stored JSON does not match (for
+    // example data written by older builds whose field names were obfuscated by R8). Such
+    // entries are dropped instead of crashing the UI later.
+    private fun sanitizeGroups(raw: List<P2PGroup>?): List<P2PGroup> =
+        (raw ?: emptyList<P2PGroup>()).filter { g ->
+            runCatching {
+                @Suppress("SENSELESS_COMPARISON")
+                (g as Any?) is P2PGroup && g.id.isNotBlank() && g.groupKeyBase64.isNotBlank() &&
+                    g.name != null && g.creatorId != null && g.channels != null && g.members != null &&
+                    g.style != null && g.channels.all { it.id != null && it.name != null } &&
+                    g.members.all { it.id != null && it.nickname != null }
+            }.getOrDefault(false)
+        }
+
+    private fun sanitizeMessages(
+        raw: Map<String, List<P2PGroupMessage>>?,
+        groups: List<P2PGroup>
+    ): Map<String, List<P2PGroupMessage>> {
+        val ids = groups.map { it.id }.toSet()
+        return (raw ?: emptyMap()).mapNotNull { (groupId, list) ->
+            @Suppress("SENSELESS_COMPARISON")
+            if (groupId == null || groupId !in ids || list == null) return@mapNotNull null
+            groupId to list.filter { m ->
+                runCatching {
+                    @Suppress("SENSELESS_COMPARISON")
+                    (m as Any?) is P2PGroupMessage && m.id != null && m.groupId != null &&
+                        m.senderId != null && m.senderName != null && m.content != null &&
+                        m.type != null && m.channelId != null
+                }.getOrDefault(false)
+            }
+        }.toMap()
+    }
+
+    private fun sanitizeUnread(raw: Map<String, Int>?): Map<String, Int> =
+        (raw ?: emptyMap()).filter { (k, v) -> runCatching { k != null && (v as Any?) is Int }.getOrDefault(false) }
 
     fun exportMigrationJson(): String = synchronized(this) {
         gson.toJson(
@@ -1464,9 +1501,10 @@ object P2PGroupManager {
         runCatching {
             val parsed = gson.fromJson(json, PersistedGroupStore::class.java) ?: return
             synchronized(this) {
-                _groups.value = parsed.groups.sortedByDescending { it.updatedAt }
-                _groupMessages.value = parsed.messages
-                _unreadCounts.value = parsed.unreadCounts
+                val validGroups = sanitizeGroups(parsed.groups)
+                _groups.value = validGroups.sortedByDescending { it.updatedAt }
+                _groupMessages.value = sanitizeMessages(parsed.messages, validGroups)
+                _unreadCounts.value = sanitizeUnread(parsed.unreadCounts)
             }
             saveToEncryptedDisk(context.applicationContext)
             refreshRelayGroupSubscriptions(context.applicationContext)

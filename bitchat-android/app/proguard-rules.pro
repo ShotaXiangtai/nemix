@@ -46,3 +46,15 @@
 -keepclassmembers class * implements android.location.LocationListener {
     public <methods>;
 }
+
+# nemix: classes stored or sent as JSON with Gson. Their field names and generic types must
+# survive R8, otherwise saved data breaks after every update (field names change) and lists
+# come back as LinkedTreeMap (ClassCastException at startup when groups exist).
+-keepattributes Signature, InnerClasses, EnclosingMethod, *Annotation*
+-keep class com.bitchat.android.groups.** { *; }
+-keep class com.bitchat.android.contact.** { *; }
+-keep class com.bitchat.android.directory.** { *; }
+-keep class com.bitchat.android.migration.** { *; }
+-keep class com.bitchat.android.security.** { *; }
+-keep class com.bitchat.android.net.MeshInternetGatewayBridge { *; }
+-keep class com.bitchat.android.net.MeshInternetGatewayBridge$* { *; }

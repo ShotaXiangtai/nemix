@@ -154,6 +154,30 @@ object WirelessCallManager {
     private var activeRingtone: Ringtone? = null
     @Volatile private var appContext: Context? = null
 
+    private const val OFFER_MAX_AGE_MS = 60_000L
+    private const val SEEN_OFFERS_PREFS = "nemix_call_seen_offers"
+    private const val SEEN_OFFERS_KEY = "ids"
+    private const val SEEN_OFFERS_MAX = 300
+
+    /**
+     * True if this OFFER must be ignored: it is older than [OFFER_MAX_AGE_MS] (or from far in
+     * the future), or its call id was already handled. Seen ids are persisted so replays after
+     * an app restart are ignored too (older clients do not send "ts").
+     */
+    @Synchronized
+    private fun isStaleOrSeenOffer(context: Context, callId: String, sentAtMs: Long?): Boolean {
+        val now = System.currentTimeMillis()
+        if (sentAtMs != null && (now - sentAtMs > OFFER_MAX_AGE_MS || sentAtMs - now > OFFER_MAX_AGE_MS)) {
+            return true
+        }
+        val prefs = context.getSharedPreferences(SEEN_OFFERS_PREFS, Context.MODE_PRIVATE)
+        val seen = prefs.getString(SEEN_OFFERS_KEY, "").orEmpty().split(",").filter { it.isNotBlank() }
+        if (callId in seen) return true
+        val updated = (seen + callId).takeLast(SEEN_OFFERS_MAX)
+        prefs.edit().putString(SEEN_OFFERS_KEY, updated.joinToString(",")).apply()
+        return false
+    }
+
     fun hasAudioPermission(context: Context): Boolean =
         ContextCompat.checkSelfPermission(
             context,
@@ -221,6 +245,8 @@ object WirelessCallManager {
         val offer = JsonObject().apply {
             addProperty("cmd", "OFFER")
             addProperty("id", callId)
+            // Send time, so receivers can ignore offers replayed later by Nostr relays.
+            addProperty("ts", System.currentTimeMillis())
             addProperty("mode", mode.wireCode)
             addProperty("key", Base64.encodeToString(keyBytes, Base64.NO_WRAP))
             addProperty("name", myNickname)
@@ -382,6 +408,9 @@ object WirelessCallManager {
 
             when (cmd) {
                 "OFFER" -> {
+                    // Nostr relays re-deliver stored events after every reconnect: an old OFFER
+                    // must never ring again ("ghost" incoming calls).
+                    if (isStaleOrSeenOffer(ctx, callId, obj.get("ts")?.asLong)) return true
                     if (_uiState.value.phase != WirelessCallPhase.IDLE) {
                         val mode = CallTransportMode.fromWire(obj.get("mode")?.asString)
                         val reject = JsonObject().apply {
