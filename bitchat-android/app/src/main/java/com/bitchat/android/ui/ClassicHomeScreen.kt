@@ -183,9 +183,13 @@ fun ClassicHomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
+                        // Left side shrinks on narrow screens so the search / menu buttons
+                        // (and the Settings entry inside the menu) always stay on screen.
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.clickable { showProfileDialog = true }
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { showProfileDialog = true }
                         ) {
                             ClassicAvatar(
                                 name = nickname,
@@ -220,7 +224,9 @@ fun ClassicHomeScreen(
                                         },
                                         color = Color.White.copy(alpha = 0.85f),
                                         fontSize = 11.sp,
-                                        fontFamily = BitchatFontFamily
+                                        fontFamily = BitchatFontFamily,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                     )
                                 }
                             }

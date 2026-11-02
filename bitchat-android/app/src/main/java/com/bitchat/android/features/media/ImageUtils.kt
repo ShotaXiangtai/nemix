@@ -14,90 +14,120 @@ import java.io.InputStream
 object ImageUtils {
     /**
      * Private-media v1 over BLE/Wi-Fi mesh supports up to 256 fragments (~120 KB total packet bytes
-     * including TLV + Noise AEAD overhead). Keeping outgoing JPEGs <= 92 KB guarantees 100% reliable
-     * single-pass mesh delivery without ever hitting the 256-fragment rejection error.
+     * including TLV + Noise AEAD overhead). Mesh sends are re-encoded to <= 92 KB right before
+     * sending (see [fitForMesh]); internet sends keep the standard, much sharper version.
      */
     private const val MAX_MESH_IMAGE_BYTES = 92_000
 
-    fun downscaleAndSaveToAppFiles(context: Context, uri: Uri, maxDim: Int = 512, quality: Int = 84): String? {
+    /** Standard quality for picked/captured photos: sharp on phones, small enough for relays. */
+    private const val STANDARD_MAX_DIM = 1600
+    private const val STANDARD_MAX_BYTES = 450_000
+
+    fun downscaleAndSaveToAppFiles(context: Context, uri: Uri, maxDim: Int = STANDARD_MAX_DIM, quality: Int = 85): String? {
         return try {
             val resolver = context.contentResolver
             val exifRotation = resolver.openInputStream(uri)?.use { getRotationDegreesFromExif(it) } ?: 0
-
-            val input = resolver.openInputStream(uri) ?: return null
-            val original = BitmapFactory.decodeStream(input)
-            input.close()
-            original ?: return null
-
-            val oriented = if (exifRotation != 0) rotateBitmap(original, exifRotation) else original
-            val outPath = compressAndWriteUnderMeshLimit(context, oriented, maxDim, quality)
-            try { if (oriented !== original) original.recycle() } catch (_: Exception) {}
-            try { oriented.recycle() } catch (_: Exception) {}
-            outPath
-        } catch (_: Exception) {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+            val options = BitmapFactory.Options().apply { inSampleSize = sampleSizeFor(bounds, maxDim) }
+            val original = resolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, options) }
+                ?: return null
+            encodeOriented(context, original, exifRotation, maxDim, quality)
+        } catch (_: Throwable) {
+            // Includes OutOfMemoryError on very large photos: never crash the chat screen.
             null
         }
     }
 
-    fun downscalePathAndSaveToAppFiles(context: Context, path: String, maxDim: Int = 512, quality: Int = 84): String? {
+    fun downscalePathAndSaveToAppFiles(context: Context, path: String, maxDim: Int = STANDARD_MAX_DIM, quality: Int = 85): String? {
         return try {
-            val original = BitmapFactory.decodeFile(path) ?: return null
-            val exifRotation = getRotationDegreesFromExif(path)
-            val oriented = if (exifRotation != 0) rotateBitmap(original, exifRotation) else original
-            val outPath = compressAndWriteUnderMeshLimit(context, oriented, maxDim, quality)
-            try { if (oriented !== original) original.recycle() } catch (_: Exception) {}
-            try { oriented.recycle() } catch (_: Exception) {}
-            outPath
-        } catch (_: Exception) {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(path, bounds)
+            val options = BitmapFactory.Options().apply { inSampleSize = sampleSizeFor(bounds, maxDim) }
+            val original = BitmapFactory.decodeFile(path, options) ?: return null
+            encodeOriented(context, original, getRotationDegreesFromExif(path), maxDim, quality)
+        } catch (_: Throwable) {
             null
         }
     }
 
-    private fun compressAndWriteUnderMeshLimit(
-        context: Context,
-        oriented: Bitmap,
-        initialMaxDim: Int,
-        initialQuality: Int
-    ): String {
-        val dims = intArrayOf(initialMaxDim, 448, 384, 320)
-        val qualities = intArrayOf(initialQuality.coerceIn(40, 90), 72, 60, 50, 40)
-        var bestBytes: ByteArray? = null
-
-        outer@ for (targetDim in dims) {
-            val w = oriented.width
-            val h = oriented.height
-            val scale = (maxOf(w, h).toFloat() / targetDim.toFloat()).coerceAtLeast(1f)
-            val newW = (w / scale).toInt().coerceAtLeast(1)
-            val newH = (h / scale).toInt().coerceAtLeast(1)
-            val scaled = if (scale > 1f) Bitmap.createScaledBitmap(oriented, newW, newH, true) else oriented
-
-            for (q in qualities) {
-                val baos = ByteArrayOutputStream()
-                scaled.compress(Bitmap.CompressFormat.JPEG, q, baos)
-                val bytes = baos.toByteArray()
-                bestBytes = bytes
-                if (bytes.size <= MAX_MESH_IMAGE_BYTES) {
-                    if (scaled !== oriented) {
-                        try { scaled.recycle() } catch (_: Exception) {}
-                    }
-                    break@outer
-                }
-            }
-            if (scaled !== oriented) {
-                try { scaled.recycle() } catch (_: Exception) {}
-            }
+    /**
+     * Returns a version of [path] small enough for one mesh (Bluetooth / Wi-Fi Aware) transfer.
+     * The file itself is returned when it already fits; otherwise a re-encoded copy is written
+     * next to it. Returns null only if the image cannot be decoded.
+     */
+    fun fitForMesh(path: String): String? {
+        val file = File(path)
+        if (!file.exists()) return null
+        if (file.length() <= MAX_MESH_IMAGE_BYTES) return path
+        return try {
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(path, bounds)
+            val options = BitmapFactory.Options().apply { inSampleSize = sampleSizeFor(bounds, 1024) }
+            val bitmap = BitmapFactory.decodeFile(path, options) ?: return null
+            val bytes = compressUnderLimit(bitmap, intArrayOf(1024, 800, 640, 512, 384, 320), MAX_MESH_IMAGE_BYTES)
+            try { bitmap.recycle() } catch (_: Exception) {}
+            val out = File(file.parentFile, file.nameWithoutExtension + "_mesh.jpg")
+            FileOutputStream(out).use { it.write(bytes) }
+            out.absolutePath
+        } catch (_: Throwable) {
+            null
         }
+    }
 
+    /** Power-of-two sample size so the decoded bitmap is at least [maxDim] but not far above it. */
+    private fun sampleSizeFor(bounds: BitmapFactory.Options, maxDim: Int): Int {
+        val longest = maxOf(bounds.outWidth, bounds.outHeight)
+        if (longest <= 0) return 1
+        var sample = 1
+        while (longest / (sample * 2) >= maxDim) sample *= 2
+        return sample
+    }
+
+    private fun encodeOriented(context: Context, original: Bitmap, exifRotation: Int, maxDim: Int, quality: Int): String {
+        val oriented = if (exifRotation != 0) rotateBitmap(original, exifRotation) else original
+        val dims = intArrayOf(maxDim, (maxDim * 0.8f).toInt(), (maxDim * 0.64f).toInt(), 800, 640)
+            .filter { it > 0 }.distinct().toIntArray()
+        val bytes = compressUnderLimit(oriented, dims, STANDARD_MAX_BYTES, firstQuality = quality)
+        try { oriented.recycle() } catch (_: Exception) {}
         val dir = File(context.filesDir, "images/outgoing").apply { mkdirs() }
         val outFile = File(dir, "img_${System.currentTimeMillis()}.jpg")
-        FileOutputStream(outFile).use { fos ->
-            if (bestBytes != null) {
-                fos.write(bestBytes)
-            } else {
-                oriented.compress(Bitmap.CompressFormat.JPEG, 55, fos)
+        FileOutputStream(outFile).use { it.write(bytes) }
+        return outFile.absolutePath
+    }
+
+    /** Tries sizes from large to small and qualities from high to low until the JPEG fits. */
+    private fun compressUnderLimit(
+        source: Bitmap,
+        dims: IntArray,
+        maxBytes: Int,
+        firstQuality: Int = 82
+    ): ByteArray {
+        val qualities = intArrayOf(firstQuality.coerceIn(40, 92), 76, 68, 60, 50, 42).distinct()
+        var best: ByteArray? = null
+        for (targetDim in dims) {
+            val scale = (maxOf(source.width, source.height).toFloat() / targetDim.toFloat()).coerceAtLeast(1f)
+            val scaled = if (scale > 1f) {
+                Bitmap.createScaledBitmap(
+                    source,
+                    (source.width / scale).toInt().coerceAtLeast(1),
+                    (source.height / scale).toInt().coerceAtLeast(1),
+                    true
+                )
+            } else source
+            try {
+                for (q in qualities) {
+                    val baos = ByteArrayOutputStream()
+                    scaled.compress(Bitmap.CompressFormat.JPEG, q, baos)
+                    val bytes = baos.toByteArray()
+                    if (best == null || bytes.size < best.size) best = bytes
+                    if (bytes.size <= maxBytes) return bytes
+                }
+            } finally {
+                if (scaled !== source) try { scaled.recycle() } catch (_: Exception) {}
             }
         }
-        return outFile.absolutePath
+        return best ?: ByteArray(0)
     }
 
     fun loadBitmapWithExifOrientation(path: String): Bitmap? {

@@ -183,11 +183,18 @@ class MediaSendingManager(
     ) {
         try {
             val filePacket = withContext(mediaWorkDispatcher) {
-                val file = java.io.File(filePath)
-                if (!file.exists()) {
+                if (!java.io.File(filePath).exists()) {
                     Log.e(TAG, "Image file does not exist")
                     return@withContext null
                 }
+                // Mesh (Bluetooth / Wi-Fi Aware) carries ~120 KB per transfer: shrink only for that
+                // route. Internet sends keep the sharper standard image.
+                val sendPath = if (willSendImageOverMesh(toPeerIDOrNull)) {
+                    com.bitchat.android.features.media.ImageUtils.fitForMesh(filePath) ?: filePath
+                } else {
+                    filePath
+                }
+                val file = java.io.File(sendPath)
 
                 if (rejectIfOversized(file, toPeerIDOrNull, channelOrNull)) {
                     return@withContext null
@@ -209,6 +216,17 @@ class MediaSendingManager(
         } catch (e: Exception) {
             Log.e(TAG, "Image send failed: ${e.message}", e)
         }
+    }
+
+    /** Same routing decision as [sendPrivateFile]: public sends and live mesh peers use the mesh. */
+    private fun willSendImageOverMesh(toPeerIDOrNull: String?): Boolean {
+        if (toPeerIDOrNull == null) return true
+        val recipient = PrivateMediaRecipientResolver.resolve(toPeerIDOrNull, meshService)
+        val hasLiveMesh = recipient != null &&
+            runCatching { meshService.getPeerInfo(recipient.meshPeerID)?.isConnected == true }.getOrDefault(false)
+        if (hasLiveMesh) return true
+        val router = com.bitchat.android.services.MessageRouter.tryGetInstance()
+        return !(router != null && router.hasInternetRoute(toPeerIDOrNull))
     }
 
     /**
@@ -331,7 +349,16 @@ class MediaSendingManager(
             transferId = transferId,
             allowLegacyFallback = false
         )
-        if (!reserveAutomaticPending(pending)) {
+        // Only one secure mesh media transfer runs at a time: wait for the previous one
+        // (e.g. several photos picked in a row) instead of refusing the new one.
+        var reserved = reserveAutomaticPending(pending)
+        var waitedMs = 0L
+        while (!reserved && waitedMs < 90_000L) {
+            kotlinx.coroutines.delay(500)
+            waitedMs += 500
+            reserved = reserveAutomaticPending(pending)
+        }
+        if (!reserved) {
             addPrivateMediaSystemMessage(
                 recipient.conversationID,
                 "Private media was not sent because another secure media send is still pending."
