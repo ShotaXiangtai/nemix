@@ -8,6 +8,7 @@
 // handles the ones iOS understands so far (profile name + picture).
 //
 
+import BitFoundation
 import Foundation
 import SwiftUI
 #if canImport(UIKit)
