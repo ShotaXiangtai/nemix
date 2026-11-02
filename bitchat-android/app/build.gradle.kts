@@ -91,6 +91,13 @@ android {
             }
         }
         release {
+            // Same opt-in for an R8 release build (e.g. start-up profiling on a real phone);
+            // debug-signed, so never distributable.
+            if (project.hasProperty("nemixDevSuffix")) {
+                applicationIdSuffix = ".dev"
+                versionNameSuffix = "-dev"
+                signingConfig = signingConfigs.getByName("debug")
+            }
             if (releaseUiTests) {
                 signingConfig = signingConfigs.getByName("debug")
                 proguardFiles("release-instrumentation.pro")

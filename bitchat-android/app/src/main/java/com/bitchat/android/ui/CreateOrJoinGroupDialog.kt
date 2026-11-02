@@ -61,7 +61,7 @@ fun CreateOrJoinGroupDialog(
         (favs + nearby).distinctBy { it.first }
     }
 
-    AlertDialog(
+    KeyboardSafeAlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Column {

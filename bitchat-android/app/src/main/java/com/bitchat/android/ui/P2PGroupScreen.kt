@@ -772,7 +772,7 @@ fun P2PGroupScreen(
 
     // Message Long-Press Action Dialog
     selectedMessageForAction?.let { targetMsg ->
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = { selectedMessageForAction = null },
             title = { Text("${targetMsg.senderName} のメッセージ", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -834,7 +834,7 @@ fun P2PGroupScreen(
         var chName by remember { mutableStateOf("") }
         var chCategory by remember { mutableStateOf("テキストチャンネル") }
         var chTopic by remember { mutableStateOf("") }
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = { showAddChannelDialog = false },
             title = { Text("# 新しいチャンネルを作成", fontWeight = FontWeight.Bold) },
             text = {
@@ -886,7 +886,7 @@ fun P2PGroupScreen(
     // Edit Pinned Notice Dialog
     if (showPinDialog) {
         var pinInput by remember { mutableStateOf(group.pinnedNotice.orEmpty()) }
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = { showPinDialog = false },
             title = { Text("ピン留めお知らせ", fontWeight = FontWeight.Bold) },
             text = {
@@ -1000,7 +1000,7 @@ fun P2PGroupScreen(
             (favs + nearby).distinctBy { it.first }
         }
 
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = { showInviteDialog = false },
             title = { Text("メンバーをグループに招待", fontWeight = FontWeight.Bold) },
             text = {
@@ -1071,7 +1071,7 @@ fun P2PGroupScreen(
 
     // Leave & Delete Confirmation
     if (showLeaveConfirm) {
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = { showLeaveConfirm = false },
             title = { Text("グループを退出・削除しますか？") },
             text = { Text("この端末から「${group.name}」の暗号鍵と履歴を削除し、メンバーへ退出を通知します。") },

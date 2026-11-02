@@ -193,7 +193,7 @@ fun ChannelModeHomeScreen(
     selectedConvForMenu?.let { conv ->
         val isArch = ChatArchiveManager.isArchived(conv.conversationID)
         val blockedByMe = ChatSecurityPolicyManager.isBlockedByMe(conv.conversationID)
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = { selectedConvForMenu = null },
             title = { Text("@${conv.displayName}") },
             text = {
@@ -1039,7 +1039,7 @@ fun ChannelModeChatScreen(
     }
 
     if (showDeleteDialog) {
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("「$title」の履歴を削除") },
             text = {
@@ -1218,7 +1218,7 @@ fun ChannelModeChatScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(reversed, key = { it.id }) { msg ->
-                if (msg.sender == "system") {
+                if (msg.isSystemNotice()) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
                         color = ChannelModeColors.SidebarBg,

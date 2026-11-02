@@ -878,7 +878,7 @@ fun OldChatCleanupDialog(
     onDismiss: () -> Unit
 ) {
     var selectedDays by remember { mutableIntStateOf(30) }
-    AlertDialog(
+    KeyboardSafeAlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
@@ -1542,7 +1542,7 @@ private fun P2PGroupRow(
     if (showGroupMenu) {
         val nextStyle = if (isChannelMode) P2PGroupStyle.STREAM else P2PGroupStyle.CHANNELS
         val nextLabel = if (isChannelMode) "ストリーム形式 (単一スレッド) に切替" else "チャンネル形式 (トピック別) に切替"
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = { showGroupMenu = false },
             title = { Text(group.name) },
             text = {
@@ -1884,7 +1884,7 @@ private fun ClassicConversationRow(
 
     if (showActionDialog) {
         val blockedByMe = ChatSecurityPolicyManager.isBlockedByMe(conversation.conversationID)
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = { showActionDialog = false },
             title = { Text(conversation.displayName) },
             text = {

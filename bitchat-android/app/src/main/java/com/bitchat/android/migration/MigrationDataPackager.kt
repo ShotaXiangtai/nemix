@@ -12,11 +12,24 @@ import com.bitchat.android.net.InternetRelayPreferences
 import com.bitchat.android.profile.UserProfileManager
 import com.bitchat.android.services.AppStateStore
 import com.bitchat.android.services.ConversationRepository
+import com.bitchat.android.model.DeliveryStatus
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.JsonElement
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
+import com.google.gson.JsonSerializationContext
+import com.google.gson.JsonSerializer
 import com.google.gson.reflect.TypeToken
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
+import java.lang.reflect.Type
+import java.util.Date
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.nio.charset.StandardCharsets
@@ -69,7 +82,65 @@ object MigrationDataPackager {
     private const val PBKDF2_ITERATIONS = 100_000
     private const val SALT_LENGTH = 16
 
-    private val gson = Gson()
+    /**
+     * Gson can't rebuild the sealed [DeliveryStatus] on its own (abstract class), which made every
+     * restore of a history with sent messages fail. Dates are written as epoch millis so a backup
+     * reads back the same on any device locale; text dates from older backups are still accepted.
+     */
+    private val gson: Gson = GsonBuilder()
+        .registerTypeHierarchyAdapter(DeliveryStatus::class.java, DeliveryStatusAdapter)
+        .registerTypeAdapter(Date::class.java, EpochDateAdapter)
+        .create()
+
+    private object EpochDateAdapter : JsonSerializer<Date>, JsonDeserializer<Date> {
+        private val legacy = Gson()
+        override fun serialize(src: Date, typeOfSrc: Type, context: JsonSerializationContext): JsonElement =
+            JsonPrimitive(src.time)
+
+        override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): Date {
+            val p = json.asJsonPrimitive
+            return if (p.isNumber) Date(p.asLong) else legacy.fromJson(json, Date::class.java)
+        }
+    }
+
+    private object DeliveryStatusAdapter : JsonSerializer<DeliveryStatus>, JsonDeserializer<DeliveryStatus> {
+        override fun serialize(src: DeliveryStatus, typeOfSrc: Type, context: JsonSerializationContext): JsonElement =
+            JsonObject().apply {
+                when (src) {
+                    is DeliveryStatus.Sending -> addProperty("kind", "sending")
+                    is DeliveryStatus.Sent -> addProperty("kind", "sent")
+                    is DeliveryStatus.Delivered -> {
+                        addProperty("kind", "delivered"); addProperty("to", src.to); addProperty("at", src.at.time)
+                    }
+                    is DeliveryStatus.Read -> {
+                        addProperty("kind", "read"); addProperty("by", src.by); addProperty("at", src.at.time)
+                    }
+                    is DeliveryStatus.Failed -> {
+                        addProperty("kind", "failed"); addProperty("reason", src.reason)
+                    }
+                    is DeliveryStatus.PartiallyDelivered -> {
+                        addProperty("kind", "partial"); addProperty("reached", src.reached); addProperty("total", src.total)
+                    }
+                }
+            }
+
+        override fun deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): DeliveryStatus? {
+            val o = json.takeIf { it.isJsonObject }?.asJsonObject ?: return null
+            fun str(k: String) = o.get(k)?.takeIf { it.isJsonPrimitive }?.asString.orEmpty()
+            fun date(k: String) = Date(o.get(k)?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isNumber }?.asLong ?: 0L)
+            return when (str("kind")) {
+                "sending" -> DeliveryStatus.Sending
+                "sent" -> DeliveryStatus.Sent
+                "delivered" -> DeliveryStatus.Delivered(str("to"), date("at"))
+                "read" -> DeliveryStatus.Read(str("by"), date("at"))
+                "failed" -> DeliveryStatus.Failed(str("reason"))
+                "partial" -> DeliveryStatus.PartiallyDelivered(
+                    o.get("reached")?.asInt ?: 0, o.get("total")?.asInt ?: 0
+                )
+                else -> null // unknown / legacy shape: drop the status, keep the message
+            }
+        }
+    }
 
     private fun readPlainPrefsMap(context: Context, prefsName: String): Map<String, String> {
         val out = mutableMapOf<String, String>()
@@ -345,49 +416,53 @@ object MigrationDataPackager {
     /**
      * Export to a password-encrypted file (.nemixbackup).
      */
-    fun exportToFile(context: Context, targetFile: File, password: String): Boolean {
+    fun exportToFile(context: Context, targetFile: File, password: String): Boolean =
+        runCatching { FileOutputStream(targetFile).use { exportToStream(context, it, password) } }
+            .getOrElse { Log.e(TAG, "Failed to export backup to file", it); false }
+
+    /** Writes a password-encrypted backup (`NEMIX` + salt + AES-GCM payload) to [out]. */
+    fun exportToStream(context: Context, out: OutputStream, password: String): Boolean {
         try {
             val payload = packageData(context)
             val salt = ByteArray(SALT_LENGTH).also { SecureRandom().nextBytes(it) }
             val keyBytes = deriveKeyFromPassword(password, salt)
             val encryptedData = encryptWithKey(payload, keyBytes)
 
-            val magic = "NEMIX".toByteArray(StandardCharsets.US_ASCII)
-            FileOutputStream(targetFile).use { fos ->
-                fos.write(magic)
-                fos.write(salt)
-                fos.write(encryptedData)
-            }
+            out.write("NEMIX".toByteArray(StandardCharsets.US_ASCII))
+            out.write(salt)
+            out.write(encryptedData)
+            out.flush()
             return true
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to export backup to file", e)
+            Log.e(TAG, "Failed to export backup", e)
             return false
         }
+    }
+
+    enum class ImportResult { OK, WRONG_PASSWORD_OR_CORRUPT, NOT_A_BACKUP, RESTORE_FAILED }
+
+    /** Reads a backup written by [exportToStream] and restores it onto this device. */
+    fun importFromStream(context: Context, input: InputStream, password: String): ImportResult {
+        val bytes = runCatching { input.readBytes() }.getOrElse { return ImportResult.NOT_A_BACKUP }
+        if (bytes.size <= 5 + SALT_LENGTH || String(bytes, 0, 5, StandardCharsets.US_ASCII) != "NEMIX") {
+            return ImportResult.NOT_A_BACKUP
+        }
+        val salt = bytes.copyOfRange(5, 5 + SALT_LENGTH)
+        val payload = runCatching {
+            decryptWithKey(bytes.copyOfRange(5 + SALT_LENGTH, bytes.size), deriveKeyFromPassword(password, salt))
+        }.getOrElse {
+            Log.e(TAG, "Backup decrypt/parse failed", it)
+            return ImportResult.WRONG_PASSWORD_OR_CORRUPT
+        }
+        return if (restoreData(context, payload)) ImportResult.OK else ImportResult.RESTORE_FAILED
     }
 
     /**
      * Import from a password-encrypted file (.nemixbackup).
      */
-    fun importFromFile(context: Context, sourceFile: File, password: String): Boolean {
-        try {
-            FileInputStream(sourceFile).use { fis ->
-                val magic = ByteArray(5)
-                fis.read(magic)
-                if (String(magic, StandardCharsets.US_ASCII) != "NEMIX") {
-                    throw IllegalArgumentException("Invalid backup file magic header")
-                }
-                val salt = ByteArray(SALT_LENGTH)
-                fis.read(salt)
-                val encryptedData = fis.readBytes()
-                val keyBytes = deriveKeyFromPassword(password, salt)
-                val payload = decryptWithKey(encryptedData, keyBytes)
-                return restoreData(context, payload)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to import backup from file", e)
-            return false
-        }
-    }
+    fun importFromFile(context: Context, sourceFile: File, password: String): Boolean =
+        runCatching { FileInputStream(sourceFile).use { importFromStream(context, it, password) } == ImportResult.OK }
+            .getOrElse { Log.e(TAG, "Failed to import backup from file", it); false }
 
     private fun deriveKeyFromPassword(password: String, salt: ByteArray): ByteArray {
         val spec = PBEKeySpec(password.toCharArray(), salt, PBKDF2_ITERATIONS, 256)

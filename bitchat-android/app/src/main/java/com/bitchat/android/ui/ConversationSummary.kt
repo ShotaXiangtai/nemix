@@ -80,7 +80,7 @@ internal fun buildConversationSummaries(
                 message.senderPeerID?.lowercase() in currentUsers
 
         val incoming = messages.filterNot {
-            isOutgoing(it) || it.sender == "system"
+            isOutgoing(it) || it.isSystemNotice()
         }
         val latestIncoming = incoming.maxWithOrNull(
             compareBy<BitchatMessage>(::activityOrder).thenBy { it.id }
@@ -119,7 +119,7 @@ internal fun buildConversationSummaries(
             latestActivityOrder = activityOrder(latest),
             latestMessageType = latest.type,
             latestMessagePreview = latest.conversationPreview(),
-            latestMessageIsOutgoing = isOutgoing(latest),
+            latestMessageIsOutgoing = isOutgoing(latest) && !latest.isSystemNotice(),
             latestDeliveryStatus = latest.deliveryStatus,
             transport = if (isNostrConversation) {
                 DirectMessageTransport.NOSTR
@@ -168,6 +168,13 @@ internal fun sortConversationSummaries(
         .thenBy { it.displayName.lowercase() }
         .thenBy { it.conversationID }
 )
+
+/**
+ * Centred notices rather than chat bubbles: real system lines plus call records written by
+ * builds up to 0.1.7, which stored them under our own name with a "call" delivery marker.
+ */
+internal fun BitchatMessage.isSystemNotice(): Boolean =
+    sender == "system" || (deliveryStatus as? DeliveryStatus.Delivered)?.to == "call"
 
 private fun isNostrConversationKey(value: String): Boolean =
     value.startsWith("nostr_") || value.startsWith("nostr:")

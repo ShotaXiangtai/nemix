@@ -58,3 +58,5 @@
 -keep class com.bitchat.android.security.** { *; }
 -keep class com.bitchat.android.net.MeshInternetGatewayBridge { *; }
 -keep class com.bitchat.android.net.MeshInternetGatewayBridge$* { *; }
+# Messages go through Gson in backups / device migration: keep field names stable across builds.
+-keep class com.bitchat.android.model.** { *; }

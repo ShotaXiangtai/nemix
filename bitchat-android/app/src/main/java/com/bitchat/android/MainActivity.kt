@@ -82,6 +82,13 @@ class MainActivity : OrientationAwareActivity() {
     }
 
     /** Shows the call screen over the lock screen and turns the display on while a call is ringing/active. */
+    /** "Update available" notification tapped: show the update dialog. */
+    private fun openUpdateFromNotification(intent: Intent?) {
+        if (intent?.getBooleanExtra(com.bitchat.android.update.UpdateNotifications.EXTRA_OPEN_UPDATE, false) != true) return
+        intent.removeExtra(com.bitchat.android.update.UpdateNotifications.EXTRA_OPEN_UPDATE)
+        com.bitchat.android.update.AppUpdateController.checkNow(this)
+    }
+
     private fun applyCallScreenFlags(intent: Intent?) {
         val forCall = intent?.getBooleanExtra(com.bitchat.android.call.IncomingCallNotifier.EXTRA_SHOW_INCOMING_CALL, false) == true
         if (!forCall) return
@@ -102,7 +109,10 @@ class MainActivity : OrientationAwareActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        StartupTiming.begin()
         applyCallScreenFlags(intent)
+        openUpdateFromNotification(intent)
+        com.bitchat.android.update.UpdateNotifications.schedule(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             this.setRecentsScreenshotEnabled(false)
         }
@@ -136,17 +146,27 @@ class MainActivity : OrientationAwareActivity() {
         com.bitchat.android.service.AppShutdownCoordinator.cancelPendingShutdown()
         
         // Enable edge-to-edge display for modern Android look
+        // The theme's logo background is only for the starting window; behind the real UI use a
+        // plain colour so the logo never shows through transparent areas.
+        val night = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
+        window.setBackgroundDrawable(
+            android.graphics.drawable.ColorDrawable(if (night) 0xFF111B21.toInt() else android.graphics.Color.WHITE)
+        )
+
         // Every top bar in the app is teal / dark, so the status bar always gets light icons.
         enableEdgeToEdge(
             statusBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
         )
 
+        StartupTiming.mark()
         // Initialize permission management
         permissionManager = PermissionManager(this)
         // Start the foreground service when allowed, then get mesh instances from the holder.
         startMeshForegroundServiceBestEffort()
         meshService = com.bitchat.android.service.MeshServiceHolder.getOrCreate(applicationContext)
         unifiedMeshService = com.bitchat.android.service.MeshServiceHolder.getUnifiedOrCreate(applicationContext)
+        StartupTiming.mark()
         // Expose BLE mesh to Wi‑Fi Aware controller for cross-transport relays - DEPRECATED
         // Bridging is now handled by TransportBridgeService automatically
         
@@ -177,7 +197,8 @@ class MainActivity : OrientationAwareActivity() {
             },
             onOnboardingFailed = ::handleOnboardingFailed
         )
-        
+        StartupTiming.mark()
+
         setContent {
             BitchatTheme {
                 val isAppLocked by com.bitchat.android.security.AppLockManager.isLocked.collectAsState()
@@ -222,6 +243,10 @@ class MainActivity : OrientationAwareActivity() {
             }
         }
         
+        StartupTiming.mark()
+        StartupTiming.end("MainActivity.onCreate")
+        window.decorView.post { StartupTiming.mark(); StartupTiming.end("MainActivity first frame") }
+
         // Collect state changes in a lifecycle-aware manner
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -759,7 +784,8 @@ class MainActivity : OrientationAwareActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         applyCallScreenFlags(intent)
-        
+        openUpdateFromNotification(intent)
+
         // Check if this is a quit request from the notification
         if (intent.getBooleanExtra("ACTION_QUIT_APP", false)) {
             android.util.Log.d("MainActivity", "Quit request received, finishing activity")

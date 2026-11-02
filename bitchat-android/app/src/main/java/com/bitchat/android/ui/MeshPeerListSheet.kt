@@ -491,7 +491,7 @@ fun MeshPeerListSheet(
             val undoLabel = stringResource(R.string.undo)
             val restoreFailedMessage =
                 stringResource(R.string.conversation_restore_failed)
-            AlertDialog(
+            KeyboardSafeAlertDialog(
                 onDismissRequest = { pendingConversationDelete = null },
                 icon = {
                     Icon(

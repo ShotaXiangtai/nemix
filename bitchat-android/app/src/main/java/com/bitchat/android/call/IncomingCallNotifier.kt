@@ -73,6 +73,40 @@ object IncomingCallNotifier {
         runCatching { NotificationManagerCompat.from(context.applicationContext).cancel(NOTIFICATION_ID) }
     }
 
+    /** Leaves a normal "missed call" notification once an unanswered call stops ringing. */
+    fun showMissed(context: Context, callerName: String, detail: String) {
+        val ctx = context.applicationContext
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val nm = ctx.getSystemService(NotificationManager::class.java)
+            if (nm != null && nm.getNotificationChannel(MISSED_CHANNEL_ID) == null) {
+                nm.createNotificationChannel(
+                    NotificationChannel(MISSED_CHANNEL_ID, "不在着信", NotificationManager.IMPORTANCE_DEFAULT)
+                        .apply { description = "応答できなかった nemix の通話" }
+                )
+            }
+        }
+        val open = PendingIntent.getActivity(
+            ctx, 4,
+            Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val name = callerName.ifBlank { "nemix" }
+        val notification = NotificationCompat.Builder(ctx, MISSED_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("不在着信: $name")
+            .setContentText(detail)
+            .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
+            .setAutoCancel(true)
+            .setContentIntent(open)
+            .build()
+        runCatching {
+            NotificationManagerCompat.from(ctx).notify(MISSED_NOTIFICATION_BASE + (name.hashCode() and 0xFFF), notification)
+        }
+    }
+
+    private const val MISSED_CHANNEL_ID = "nemix_missed_call"
+    private const val MISSED_NOTIFICATION_BASE = 0x4E000
+
     /** Android 14+ lets users revoke full-screen intents; without it the call shows as a heads-up only. */
     fun canUseFullScreenIntent(context: Context): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||

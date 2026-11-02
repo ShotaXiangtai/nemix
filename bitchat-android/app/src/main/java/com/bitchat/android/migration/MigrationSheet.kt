@@ -8,6 +8,8 @@ import android.os.Looper
 import android.util.Base64
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
+import com.bitchat.android.ui.KeyboardSafeAlertDialog
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -193,7 +196,7 @@ private fun SendMigrationTab(context: Context, onDismiss: () -> Unit) {
     }
 
     if (showWipeDialog) {
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = { showWipeDialog = false },
             title = { Text("旧端末のデータを消去しますか？", fontWeight = FontWeight.Bold) },
             text = {
@@ -540,6 +543,55 @@ private fun FileBackupTab(context: Context) {
     val coroutineScope = rememberCoroutineScope()
     var password by remember { mutableStateOf("") }
     var isWorking by remember { mutableStateOf(false) }
+    var restoredOk by remember { mutableStateOf(false) }
+
+    // System file picker (works on every Android version without storage permissions; the user
+    // can save to the phone, an SD card or a cloud drive).
+    val createBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        isWorking = true
+        coroutineScope.launch(Dispatchers.IO) {
+            val ok = runCatching {
+                context.contentResolver.openOutputStream(uri, "wt")?.use {
+                    MigrationDataPackager.exportToStream(context, it, password)
+                } ?: false
+            }.getOrDefault(false)
+            withContext(Dispatchers.Main) {
+                isWorking = false
+                Toast.makeText(
+                    context,
+                    if (ok) "バックアップを保存しました。パスワードは忘れないよう控えてください" else "バックアップの作成に失敗しました",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+    val openBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        isWorking = true
+        coroutineScope.launch(Dispatchers.IO) {
+            val result = runCatching {
+                context.contentResolver.openInputStream(uri)?.use {
+                    MigrationDataPackager.importFromStream(context, it, password)
+                } ?: MigrationDataPackager.ImportResult.NOT_A_BACKUP
+            }.getOrDefault(MigrationDataPackager.ImportResult.NOT_A_BACKUP)
+            withContext(Dispatchers.Main) {
+                isWorking = false
+                val msg = when (result) {
+                    MigrationDataPackager.ImportResult.OK -> {
+                        restoredOk = true
+                        "復元しました。アプリを再起動すると反映されます"
+                    }
+                    MigrationDataPackager.ImportResult.WRONG_PASSWORD_OR_CORRUPT -> "パスワードが違うか、ファイルが壊れています"
+                    MigrationDataPackager.ImportResult.NOT_A_BACKUP -> "nemix のバックアップファイルではありません"
+                    MigrationDataPackager.ImportResult.RESTORE_FAILED -> "復元に失敗しました"
+                }
+                Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -571,24 +623,12 @@ private fun FileBackupTab(context: Context) {
         // Export Button
         Button(
             onClick = {
-                if (password.length < 6) {
-                    Toast.makeText(context, "パスワードは6文字以上にしてください", Toast.LENGTH_SHORT).show()
+                if (password.length < 8) {
+                    Toast.makeText(context, "パスワードは8文字以上にしてください", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
-                isWorking = true
-                coroutineScope.launch(Dispatchers.IO) {
-                    val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                    val backupFile = File(downloadsDir, "nemix_backup_${System.currentTimeMillis()}.nemixbackup")
-                    val ok = MigrationDataPackager.exportToFile(context, backupFile, password)
-                    withContext(Dispatchers.Main) {
-                        isWorking = false
-                        if (ok) {
-                            Toast.makeText(context, "保存完了: ${backupFile.name}", Toast.LENGTH_LONG).show()
-                        } else {
-                            Toast.makeText(context, "バックアップ作成に失敗しました", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
+                val stamp = java.text.SimpleDateFormat("yyyyMMdd-HHmm", java.util.Locale.US).format(java.util.Date())
+                createBackup.launch("nemix-backup-$stamp.nemixbackup")
             },
             enabled = !isWorking && password.isNotEmpty(),
             colors = ButtonDefaults.buttonColors(containerColor = ClassicColors.AccentGreen),
@@ -602,39 +642,41 @@ private fun FileBackupTab(context: Context) {
         // Import Button
         OutlinedButton(
             onClick = {
-                if (password.length < 6) {
-                    Toast.makeText(context, "パスワードを入力してください", Toast.LENGTH_SHORT).show()
-                    return@OutlinedButton
-                }
-                isWorking = true
-                coroutineScope.launch(Dispatchers.IO) {
-                    val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                    val backupFiles = downloadsDir.listFiles { _, name -> name.endsWith(".nemixbackup") }
-                    val latest = backupFiles?.maxByOrNull { it.lastModified() }
-                    if (latest == null) {
-                        withContext(Dispatchers.Main) {
-                            isWorking = false
-                            Toast.makeText(context, "ダウンロードフォルダに .nemixbackup ファイルが見つかりません", Toast.LENGTH_LONG).show()
-                        }
-                        return@launch
-                    }
-
-                    val ok = MigrationDataPackager.importFromFile(context, latest, password)
-                    withContext(Dispatchers.Main) {
-                        isWorking = false
-                        if (ok) {
-                            Toast.makeText(context, "${latest.name} から正常に復元しました！", Toast.LENGTH_LONG).show()
-                        } else {
-                            Toast.makeText(context, "復元失敗: パスワードが異なるかファイルが破損しています", Toast.LENGTH_LONG).show()
-                        }
-                    }
-                }
+                openBackup.launch(arrayOf("*/*"))
             },
             enabled = !isWorking && password.isNotEmpty(),
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("最新のバックアップから復元")
+            Text("バックアップファイルを選んで復元")
         }
+
+        if (isWorking) {
+            Spacer(modifier = Modifier.height(16.dp))
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        }
+
+        if (restoredOk) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = {
+                    // Identity keys were replaced: restart cleanly so every service picks them up.
+                    val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                    launch?.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                    launch?.let { context.startActivity(it) }
+                    android.os.Process.killProcess(android.os.Process.myPid())
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("アプリを再起動") }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "・バックアップには ID（鍵）・連絡先・トーク・グループ・設定が含まれます。\n" +
+                "・ファイルはパスワードで暗号化されます。パスワードを忘れると復元できません。\n" +
+                "・保存先は端末内、SD カード、クラウドドライブなどから選べます。",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

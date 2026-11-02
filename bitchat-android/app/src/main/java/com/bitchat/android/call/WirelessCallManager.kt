@@ -460,6 +460,7 @@ object WirelessCallManager {
                                 postSummary = true,
                                 customSummary = "不在着信 (${mode.shortLabel})"
                             )
+                            IncomingCallNotifier.showMissed(ctx, callerName, "音声通話 (${mode.shortLabel})")
                         }
                     }
                 }
@@ -498,6 +499,9 @@ object WirelessCallManager {
                             postSummary = true,
                             customSummary = if (wasMissed) "不在着信 (${cur.transportMode.shortLabel})" else null
                         )
+                        if (wasMissed) {
+                            IncomingCallNotifier.showMissed(ctx, cur.peerName, "音声通話 (${cur.transportMode.shortLabel})")
+                        }
                     }
                 }
             }
@@ -1167,16 +1171,15 @@ object WirelessCallManager {
     private fun postCallHistoryNotice(context: Context, conversationID: String, text: String) {
         scope.launch {
             runCatching {
-                val mesh = MeshServiceHolder.getUnifiedOrCreate(context)
+                // A call record is neither side's message: store it as a centred system
+                // notice (it used to be attributed to us and showed as our own bubble).
                 val msg = BitchatMessage(
                     id = UUID.randomUUID().toString().uppercase(),
-                    sender = AppStateStore.nickname.value.ifBlank { "me" },
-                    content = text,
+                    sender = "system",
+                    content = "📞 $text",
                     timestamp = Date(),
                     isRelay = false,
-                    isPrivate = true,
-                    senderPeerID = mesh.myPeerID,
-                    deliveryStatus = DeliveryStatus.Delivered("call", Date())
+                    isPrivate = true
                 )
                 AppStateStore.addPrivateMessageDurably(conversationID, msg)
             }

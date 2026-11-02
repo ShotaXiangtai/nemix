@@ -814,6 +814,24 @@ fun AboutSheet(
                                             checked = spamFilterEnabled,
                                             onCheckedChange = { SpamFilterPreferences.setEnabled(it) }
                                         )
+
+                                        // Android 14+: the full-screen intent permission can be off, and then
+                                        // incoming calls never show on the lock screen.
+                                        if (!com.bitchat.android.call.IncomingCallNotifier.canUseFullScreenIntent(context)) {
+                                            HorizontalDivider(
+                                                modifier = Modifier.padding(start = 54.dp),
+                                                thickness = 1.dp,
+                                                color = colorScheme.outlineVariant
+                                            )
+                                            SettingsActionRow(
+                                                icon = Icons.Filled.ScreenLockPortrait,
+                                                title = "ロック画面に着信を表示（オフ）",
+                                                subtitle = "「全画面通知」の許可がオフのため、ロック中は着信画面が出ません。タップして許可してください",
+                                                onClick = {
+                                                    com.bitchat.android.call.IncomingCallNotifier.openFullScreenIntentSettings(context)
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -916,6 +934,24 @@ fun AboutSheet(
                                                     com.bitchat.android.update.AppUpdateController.checkNow(context)
                                                 }
                                             )
+                                            HorizontalDivider(
+                                                modifier = Modifier.padding(start = 54.dp),
+                                                thickness = 1.dp,
+                                                color = colorScheme.outlineVariant
+                                            )
+                                            var updateNotify by remember {
+                                                mutableStateOf(com.bitchat.android.update.UpdateNotifications.isEnabled(context))
+                                            }
+                                            SettingsToggleRow(
+                                                icon = Icons.Filled.Notifications,
+                                                title = "アップデートの通知",
+                                                subtitle = "新しいバージョンが出たら通知でお知らせします（1日2回ほど GitHub を確認）",
+                                                checked = updateNotify,
+                                                onCheckedChange = { enabled ->
+                                                    updateNotify = enabled
+                                                    com.bitchat.android.update.UpdateNotifications.setEnabled(context, enabled)
+                                                }
+                                            )
                                         } else SettingsActionRow(
                                             icon = Icons.Filled.SystemUpdate,
                                             title = "Google Play でアップデートを確認",
@@ -1011,7 +1047,7 @@ private fun CustomRelayAndTorDialog(
     var torEnabledInput by remember { mutableStateOf(currentTorMode == TorMode.ON) }
     val torStatus by ArtiTorManager.getInstance().statusFlow.collectAsState()
 
-    AlertDialog(
+    KeyboardSafeAlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
@@ -1150,7 +1186,7 @@ fun PasswordPromptDialog(
     if (show && channelName != null) {
         val colorScheme = MaterialTheme.colorScheme
 
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = onDismiss,
             title = {
                 Text(

@@ -745,6 +745,13 @@ private struct ContentPrivateHeaderInfoButton: View {
                     }
                 }
 
+                #if canImport(UIKit)
+                if !headerState.isGroupConversation {
+                    // Profile picture shared by a nemix (Android) peer, if any.
+                    NemixAvatarView(peerID: headerState.headerPeerID, name: headerState.displayName, size: 26)
+                }
+                #endif
+
                 Text(headerState.displayName)
                     .bitchatFont(size: 16, weight: .medium)
                     .foregroundColor(palette.primary)

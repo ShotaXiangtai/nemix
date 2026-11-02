@@ -472,7 +472,7 @@ fun ContactExchangeSheet(
 
     // Confirmation dialog for reissuing permanent invite
     if (showRevokeConfirmDialog) {
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = { showRevokeConfirmDialog = false },
             title = { Text("永久リンクを再発行しますか？", fontWeight = FontWeight.Bold, fontFamily = BitchatFontFamily) },
             text = {

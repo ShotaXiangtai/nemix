@@ -348,7 +348,7 @@ fun ClassicChatScreen(
 
     // Delete Conversation Confirmation Dialog
     if (showDeleteChatDialog) {
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = { showDeleteChatDialog = false },
             title = {
                 Text(
@@ -426,7 +426,7 @@ fun ClassicChatScreen(
 
     // Single Message Long-Press Action Dialog
     selectedMessageForAction?.let { targetMsg ->
-        AlertDialog(
+        KeyboardSafeAlertDialog(
             onDismissRequest = { selectedMessageForAction = null },
             title = { Text("メッセージ操作", fontSize = 16.sp, fontWeight = FontWeight.Bold) },
             text = {
@@ -895,7 +895,7 @@ fun ClassicChatScreen(
                                 items = reversedMessages,
                                 key = { _, msg -> msg.id }
                             ) { _, msg ->
-                                if (msg.sender == "system") {
+                                if (msg.isSystemNotice()) {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()

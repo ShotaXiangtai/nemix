@@ -532,6 +532,11 @@ final class ChatPrivateConversationCoordinator {
             return
         }
 
+        // nemix (Android) control frames: profile sync, groups, calls… never chat text.
+        if NemixControlPlane.intercept(pm.content, senderPeerID: convKey, senderNickname: senderName) {
+            return
+        }
+
         let conversationPeerID = consolidateAccountConversationAliases(for: convKey)
 
         if context.privateChatsContainMessage(withID: messageId) { return }
@@ -658,6 +663,11 @@ final class ChatPrivateConversationCoordinator {
 
         if message.content.hasPrefix("[FAVORITED]") || message.content.hasPrefix("[UNFAVORITED]") {
             handleFavoriteNotification(message.content, from: peerID, senderNickname: message.sender)
+            return
+        }
+
+        // nemix (Android) control frames: profile sync, groups, calls… never chat text.
+        if NemixControlPlane.intercept(message.content, senderPeerID: peerID, senderNickname: message.sender) {
             return
         }
 

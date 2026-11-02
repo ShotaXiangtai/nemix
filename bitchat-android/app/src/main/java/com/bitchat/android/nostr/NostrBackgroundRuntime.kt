@@ -58,8 +58,12 @@ object NostrBackgroundRuntime {
             initialized = true
         }
 
-        subscriptions.connect()
-        subscribeAccountDm()
+        // Relay sockets and the account key derivation take ~0.5 s on low-end phones: keep them
+        // off the main thread so app start-up isn't blocked.
+        scope.launch {
+            subscriptions.connect()
+            subscribeAccountDm()
+        }
         observeSelectedChannel()
         startPresenceScheduler()
     }

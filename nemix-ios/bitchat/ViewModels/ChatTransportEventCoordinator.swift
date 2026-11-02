@@ -333,6 +333,8 @@ private extension ChatTransportEventCoordinator {
         in context: any ChatTransportEventContext
     ) {
         let normalized = content.trimmed
+        // nemix (Android) gateway / group multicast frames are not public chat.
+        guard !NemixControlPlane.isControlPacket(normalized) else { return }
         let mentions = context.parseMentions(from: normalized)
         let message = BitchatMessage(
             id: messageID,
@@ -360,6 +362,14 @@ private extension ChatTransportEventCoordinator {
     ) -> Bool {
         guard !context.isMessageBlocked(message) else { return false }
         guard !message.content.trimmed.isEmpty || message.isPrivate else { return false }
+
+        // nemix (Android) control frames: private ones are processed (profile sync etc.) by the
+        // private-chat path, public ones (gateway / group multicast) are dropped. Neither is
+        // chat text, so no mention check, haptics or timeline entry.
+        if NemixControlPlane.isControlPacket(message.content) {
+            if message.isPrivate { context.handlePrivateMessage(message) }
+            return false
+        }
 
         if message.isPrivate {
             context.handlePrivateMessage(message)

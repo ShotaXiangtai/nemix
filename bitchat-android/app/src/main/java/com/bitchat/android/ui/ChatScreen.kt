@@ -197,6 +197,9 @@ fun ChatScreen(viewModel: ChatViewModel) {
         if (isProfileSetupCompleted && isTosAccepted) AppUpdateController.checkAutomatically(updateContext)
     }
     AppUpdatePrompt()
+    if (isProfileSetupCompleted && isTosAccepted) {
+        com.bitchat.android.call.FullScreenCallPrompt()
+    }
 
     // Contact invite link tapped outside the app (nemix://contact/... or https://nemi-x.com/c#...)
     val invite = incomingInvite
