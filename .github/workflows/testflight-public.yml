@@ -1,0 +1,41 @@
+name: iOS TestFlight public beta
+
+# Manually triggered. Creates/reuses an external TestFlight group with a public link,
+# adds the latest processed build and submits it for Beta App Review.
+
+on:
+  workflow_dispatch:
+    inputs:
+      group:
+        description: "External group name"
+        default: "公開ベータ"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  public-beta:
+    runs-on: ubuntu-24.04
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      BUNDLE_ID: im.nemix.ios
+      GROUP_NAME: ${{ inputs.group }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - name: Install App Store Connect API key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          KEY="$RUNNER_TEMP/AuthKey.p8"
+          printf '%s\n' "$ASC_KEY_P8" | tr -d '\r' > "$KEY"
+          echo "ASC_KEY_PATH=$KEY" >> "$GITHUB_ENV"
+
+      - name: Create public beta and submit for review
+        run: node .github/scripts/asc-public-beta.mjs
+
+      - name: Remove API key
+        if: always()
+        run: rm -f "$ASC_KEY_PATH"
