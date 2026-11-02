@@ -415,6 +415,8 @@ object WirelessCallManager {
                         transportMode = mode
                     )
                     NemixTelecomHelper.reportIncomingCall(ctx, callerName)
+                    // Also post directly: some devices never call onShowIncomingCallUi.
+                    IncomingCallNotifier.show(ctx, callerName)
                     startRingingAlert(ctx)
 
                     ringTimeoutJob?.cancel()
@@ -1119,6 +1121,7 @@ object WirelessCallManager {
     }
 
     private fun stopRingingAlert(context: Context) {
+        IncomingCallNotifier.cancel(context)
         runCatching { activeRingtone?.stop() }
         activeRingtone = null
         runCatching {

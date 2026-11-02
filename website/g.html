@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="no-referrer" />
+  <title>nemix グループへの招待</title>
+  <link rel="icon" type="image/png" href="/assets/nemix-logo.png" />
+  <style>
+    :root { --bg:#f1f5f9; --card:#ffffff; --text:#0f172a; --muted:#64748b; --accent:#0284c7; --accent-ink:#ffffff; --line:#e2e8f0; --warn:#b45309; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#0b1220; --card:#111a2e; --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent-ink:#0b1220; --line:#1e293b; --warn:#fbbf24; }
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px 16px;
+      background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif; }
+    .card { width:100%; max-width:420px; background:var(--card); border:1px solid var(--line); border-radius:20px; padding:32px 24px; text-align:center; }
+    .logo { width:72px; height:72px; border-radius:18px; }
+    h1 { font-size:20px; margin:18px 0 6px; line-height:1.4; word-break:break-word; }
+    .sub { color:var(--muted); font-size:14px; margin:0 0 20px; line-height:1.6; }
+    .expiry { display:inline-block; font-size:13px; padding:4px 10px; border-radius:999px; border:1px solid var(--line); color:var(--muted); margin-bottom:20px; }
+    .expiry.expired { color:var(--warn); border-color:var(--warn); }
+    .btn { display:block; width:100%; padding:14px; border-radius:12px; font-size:16px; font-weight:600; text-decoration:none; border:0; cursor:pointer; margin-top:10px; font-family:inherit; }
+    .primary { background:var(--accent); color:var(--accent-ink); }
+    .secondary { background:transparent; color:var(--text); border:1px solid var(--line); }
+    .note { font-size:12px; color:var(--muted); margin-top:22px; line-height:1.7; text-align:left; }
+    .note strong { color:var(--text); }
+    a.plain { color:var(--accent); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <img class="logo" src="/assets/nemix-logo.png" alt="nemix" />
+
+    <div id="invite" hidden>
+      <h1 id="title"></h1>
+      <p class="sub" id="subline">nemix の P2P グループに招待されています。アプリで開くと、参加するかどうかを確認できます。</p>
+      <div id="expiry" class="expiry" hidden></div>
+      <a id="open" class="btn primary" href="#">nemix アプリで開く</a>
+      <button id="copy" class="btn secondary" type="button">リンクをコピー</button>
+      <a class="btn secondary" href="/#download">nemix を入手する</a>
+      <p class="note">
+        開けない場合は、リンクをコピーして nemix の「グループ → 招待コードで参加」に貼り付けてください。<br />
+        <strong>グループの暗号鍵を含む招待の情報は、サーバーに送信されません。</strong>リンクの「#」以降はお使いのブラウザの中だけで処理されます。
+      </p>
+    </div>
+
+    <div id="empty" hidden>
+      <h1>招待リンクが見つかりません</h1>
+      <p class="sub">リンクが途中で切れている可能性があります。相手にもう一度送ってもらってください。</p>
+      <a class="btn primary" href="/">nemix について</a>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var fragment = location.hash.replace(/^#/, "");
+      var payload = null;
+      if (fragment) {
+        try {
+          var b64 = fragment.replace(/-/g, "+").replace(/_/g, "/");
+          while (b64.length % 4) b64 += "=";
+          var bin = atob(b64);
+          var bytes = new Uint8Array(bin.length);
+          for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          payload = JSON.parse(new TextDecoder().decode(bytes));
+        } catch (e) { payload = null; }
+      }
+
+      if (!payload || typeof payload !== "object") {
+        document.getElementById("empty").hidden = false;
+        return;
+      }
+
+      var group = payload.group || {};
+      var groupName = typeof group.name === "string" && group.name.trim() ? group.name.trim().slice(0, 60) : "P2P グループ";
+      var inviter = typeof payload.inviterName === "string" && payload.inviterName.trim() ? payload.inviterName.trim().slice(0, 40) : "";
+      document.getElementById("title").textContent = "「" + groupName + "」への招待";
+      var count = Array.isArray(group.members) ? group.members.length : 0;
+      document.getElementById("subline").textContent =
+        (inviter ? inviter + " さんから" : "") + "nemix の P2P グループ（" + count + "人）に招待されています。アプリで開くと、参加するかどうかを確認できます。";
+
+      var exp = 0;
+      if (exp > 0) {
+        var el = document.getElementById("expiry");
+        var d = new Date(exp);
+        var text = d.toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+        if (Date.now() > exp) {
+          el.textContent = "有効期限切れ（" + text + "）";
+          el.classList.add("expired");
+        } else {
+          el.textContent = "有効期限: " + text + " まで";
+        }
+        el.hidden = false;
+      }
+
+      // Same payload, handed to the app through its custom scheme.
+      document.getElementById("open").href = "nemix://group#" + fragment;
+
+      document.getElementById("copy").addEventListener("click", function () {
+        var btn = this;
+        var done = function () { btn.textContent = "コピーしました"; };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(location.href).then(done, function () { btn.textContent = "コピーできませんでした"; });
+        } else {
+          btn.textContent = "コピーできませんでした";
+        }
+      });
+
+      document.getElementById("invite").hidden = false;
+    })();
+  </script>
+</body>
+</html>

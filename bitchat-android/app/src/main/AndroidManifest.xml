@@ -52,6 +52,8 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- OS-standard Telecom self-managed VoIP calls -->
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
+    <!-- Incoming calls on the lock screen (full-screen call notification) -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- Camera for QR verification -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -139,6 +141,13 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="nemix" android:host="contact" />
             </intent-filter>
+            <!-- nemix group invite links: nemix://group... -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="nemix" android:host="group" />
+            </intent-filter>
             <!-- https://nemi-x.com/c#... (Android App Link, verified via /.well-known/assetlinks.json) -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -148,6 +157,7 @@
                 <data android:host="nemi-x.com" />
                 <data android:host="www.nemi-x.com" />
                 <data android:path="/c" />
+                <data android:path="/g" />
             </intent-filter>
         </activity>
 
@@ -168,6 +178,11 @@
                 <action android:name="android.telecom.ConnectionService" />
             </intent-filter>
         </service>
+
+        <!-- Answer / Decline buttons on the incoming-call notification -->
+        <receiver
+            android:name=".call.CallActionReceiver"
+            android:exported="false" />
 
         <receiver
             android:name=".service.ConversationNotificationReceiver"

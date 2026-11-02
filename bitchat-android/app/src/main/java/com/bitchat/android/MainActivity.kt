@@ -81,8 +81,28 @@ class MainActivity : OrientationAwareActivity() {
         }
     }
 
+    /** Shows the call screen over the lock screen and turns the display on while a call is ringing/active. */
+    private fun applyCallScreenFlags(intent: Intent?) {
+        val forCall = intent?.getBooleanExtra(com.bitchat.android.call.IncomingCallNotifier.EXTRA_SHOW_INCOMING_CALL, false) == true
+        if (!forCall) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    android.view.WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            )
+        }
+        runCatching {
+            (getSystemService(android.app.KeyguardManager::class.java))?.requestDismissKeyguard(this, null)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        applyCallScreenFlags(intent)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             this.setRecentsScreenshotEnabled(false)
         }
@@ -735,6 +755,7 @@ class MainActivity : OrientationAwareActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        applyCallScreenFlags(intent)
         
         // Check if this is a quit request from the notification
         if (intent.getBooleanExtra("ACTION_QUIT_APP", false)) {
@@ -873,6 +894,11 @@ class MainActivity : OrientationAwareActivity() {
 
     private fun handleContactInviteIntent(intent: Intent) {
         val uri = intent.data ?: return
+        if (com.bitchat.android.groups.P2PGroupManager.isInviteLink(uri)) {
+            // Shown as a "join this group?" dialog; nothing is joined automatically.
+            com.bitchat.android.groups.P2PGroupManager.offerInviteLink(uri.toString())
+            return
+        }
         com.bitchat.android.contact.ContactExchangeManager.offerIncomingInvite(uri)
     }
 

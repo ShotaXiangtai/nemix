@@ -1038,8 +1038,17 @@ fun P2PGroupScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        P2PGroupManager.invitePeerToGroup(context, group.id, targetId, nickname)
-                                        Toast.makeText(context, "$targetName さんに招待を送信しました", Toast.LENGTH_SHORT).show()
+                                        val route = P2PGroupManager.invitePeerToGroup(context, group.id, targetId, nickname)
+                                        val message = when (route) {
+                                            com.bitchat.android.services.MessageRouter.RouteResult.MESH,
+                                            com.bitchat.android.services.MessageRouter.RouteResult.NOSTR ->
+                                                "$targetName さんに招待を送信しました"
+                                            com.bitchat.android.services.MessageRouter.RouteResult.QUEUED ->
+                                                "$targetName さんは今つながっていません。接続されたら招待を送信します"
+                                            com.bitchat.android.services.MessageRouter.RouteResult.DROPPED ->
+                                                "招待を送信できませんでした。招待リンクをコピーして送ってください"
+                                        }
+                                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                                     }
                                     .padding(vertical = 6.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,

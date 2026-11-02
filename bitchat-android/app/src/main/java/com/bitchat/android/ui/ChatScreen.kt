@@ -53,6 +53,7 @@ fun ChatScreen(viewModel: ChatViewModel) {
     val isProfileSetupCompleted by UserProfileManager.isSetupCompleted.collectAsStateWithLifecycle()
     val isTosAccepted by TermsOfServiceManager.acceptedFlow.collectAsStateWithLifecycle()
     val incomingInvite by ContactExchangeManager.pendingIncomingInvite.collectAsStateWithLifecycle()
+    val pendingGroupInvites by P2PGroupManager.pendingInvites.collectAsStateWithLifecycle()
 
     var showPanicConfirmation by remember { mutableStateOf(false) }
     var showDebugSheet by remember { mutableStateOf(false) }
@@ -206,6 +207,33 @@ fun ChatScreen(viewModel: ChatViewModel) {
                 initialInviteUrl = invite
             )
         }
+    }
+
+    // Group invitation (direct invite or opened link): never joined without the user saying yes
+    val groupInvite = pendingGroupInvites.firstOrNull()
+    if (groupInvite != null && isProfileSetupCompleted && isTosAccepted) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("グループへの招待") },
+            text = {
+                Text(
+                    groupInvite.inviterName.ifBlank { "nemix ユーザー" } + " さんから P2P グループ「" +
+                        groupInvite.groupName + "」（" + groupInvite.memberCount + "人）への招待が届きました。参加しますか？"
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    P2PGroupManager.acceptPendingInvite(context, groupInvite.id, nickname)
+                        .onSuccess { joined -> activeChatTarget = "group:" + joined.id }
+                        .onFailure { error ->
+                            android.widget.Toast.makeText(context, error.message ?: "参加できませんでした", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                }) { Text("参加する") }
+            },
+            dismissButton = {
+                TextButton(onClick = { P2PGroupManager.declinePendingInvite(groupInvite.id) }) { Text("参加しない") }
+            }
+        )
     }
 
     // First-Launch Profile (Name + Compressed Icon + UI Style + Nearby Visibility) & Terms of Service Setup

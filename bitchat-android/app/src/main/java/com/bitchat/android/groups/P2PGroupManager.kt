@@ -137,6 +137,23 @@ object P2PGroupManager {
     private val _groups = MutableStateFlow<List<P2PGroup>>(emptyList())
     val groups: StateFlow<List<P2PGroup>> = _groups.asStateFlow()
 
+    /** Shareable invite links: https://nemi-x.com/g#<code>. The fragment never reaches the server. */
+    const val WEB_INVITE_PREFIX = "https://nemi-x.com/g#"
+
+    /** An invitation the user has not accepted yet (received directly or opened from a link). */
+    data class PendingGroupInvite(
+        val id: String,
+        val groupId: String,
+        val groupName: String,
+        val inviterName: String,
+        val memberCount: Int,
+        internal val payloadJson: String
+    )
+
+    // Invitations are never joined automatically: anyone could otherwise add you to a group.
+    private val _pendingInvites = MutableStateFlow<List<PendingGroupInvite>>(emptyList())
+    val pendingInvites: StateFlow<List<PendingGroupInvite>> = _pendingInvites.asStateFlow()
+
     // groupId -> chronological list of messages across all channels in that group
     private val _groupMessages = MutableStateFlow<Map<String, List<P2PGroupMessage>>>(emptyMap())
     val groupMessages: StateFlow<Map<String, List<P2PGroupMessage>>> = _groupMessages.asStateFlow()
@@ -312,10 +329,10 @@ object P2PGroupManager {
         groupId: String,
         peerTarget: String,
         myNickname: String
-    ): Boolean {
+    ): MessageRouter.RouteResult {
         val appCtx = context.applicationContext
-        val group = _groups.value.firstOrNull { it.id == groupId } ?: return false
-        val newMember = buildMemberFromPeerTarget(appCtx, peerTarget) ?: return false
+        val group = _groups.value.firstOrNull { it.id == groupId } ?: return MessageRouter.RouteResult.DROPPED
+        val newMember = buildMemberFromPeerTarget(appCtx, peerTarget) ?: return MessageRouter.RouteResult.DROPPED
 
         val updatedMembers = if (group.members.any { it.id.equals(newMember.id, ignoreCase = true) }) {
             group.members
@@ -325,7 +342,7 @@ object P2PGroupManager {
         val updatedGroup = group.copy(members = updatedMembers, updatedAt = System.currentTimeMillis())
         replaceGroup(appCtx, updatedGroup)
 
-        sendDirectGroupInvite(appCtx, updatedGroup, peerTarget, myNickname)
+        val route = sendDirectGroupInvite(appCtx, updatedGroup, peerTarget, myNickname)
 
         // Notify existing members of updated roster
         val me = myMemberIdentity(appCtx, myNickname)
@@ -343,11 +360,12 @@ object P2PGroupManager {
             )
         )
         appendLocalSystemMessage(updatedGroup.id, "👋 ${newMember.nickname} さんをグループに招待しました")
-        return true
+        return route
     }
 
     /**
-     * Generates a shareable P2P invite URI (`nemix://group?d=...`) containing the group key & metadata.
+     * Generates a shareable invite link (`https://nemi-x.com/g#...`) containing the group key and
+     * metadata. The secret part is in the URL fragment, which browsers never send to the server.
      */
     fun buildInviteUri(groupId: String, inviterNickname: String): String? {
         val group = _groups.value.firstOrNull { it.id == groupId } ?: return null
@@ -356,35 +374,100 @@ object P2PGroupManager {
             gson.toJson(payload).toByteArray(StandardCharsets.UTF_8),
             Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
         )
-        return "nemix://group?d=$b64"
+        return WEB_INVITE_PREFIX + b64
+    }
+
+    /** True for group invite links this app can open (https://nemi-x.com/g#…, nemix://group…). */
+    fun isInviteLink(uri: Uri): Boolean {
+        val scheme = uri.scheme?.lowercase() ?: return false
+        val host = uri.host?.lowercase() ?: return false
+        return (scheme == "nemix" && host == "group") ||
+            (scheme == "https" && (host == "nemi-x.com" || host == "www.nemi-x.com") &&
+                uri.path?.trimEnd('/') == "/g" && !uri.fragment.isNullOrBlank())
     }
 
     /**
-     * Joins a P2P group from a `nemix://group?d=...` invite URI or raw base64 invite code.
+     * Parses any supported invite form: https://nemi-x.com/g#code, nemix://group#code,
+     * legacy nemix://group?d=code, or the raw code (URL-safe or standard Base64).
+     */
+    private fun parseInvite(rawInvite: String): GroupInvitePayload {
+        val trimmed = rawInvite.trim()
+        val encoded = when {
+            trimmed.contains("#") -> trimmed.substringAfter("#")
+            trimmed.startsWith("nemix://group", ignoreCase = true) ->
+                Uri.parse(trimmed).getQueryParameter("d")
+                    ?: throw IllegalArgumentException("招待リンクの形式が不正です")
+            else -> trimmed
+        }.trim()
+        val bytes = runCatching {
+            Base64.decode(encoded, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+        }.getOrElse { Base64.decode(encoded, Base64.DEFAULT) }
+        val invite = gson.fromJson(String(bytes, StandardCharsets.UTF_8), GroupInvitePayload::class.java)
+            ?: throw IllegalArgumentException("招待データを解析できませんでした")
+        if (invite.group.id.isBlank() || invite.group.groupKeyBase64.isBlank()) {
+            throw IllegalArgumentException("グループ暗号鍵が含まれていません")
+        }
+        return invite
+    }
+
+    /** Queues an invite opened from a link so the user can confirm before joining. */
+    fun offerInviteLink(rawInvite: String): Result<PendingGroupInvite> = runCatching {
+        val invite = parseInvite(rawInvite)
+        addPendingInvite(invite, invite.inviterName)
+    }
+
+    private fun addPendingInvite(invite: GroupInvitePayload, fallbackInviter: String): PendingGroupInvite {
+        val pending = PendingGroupInvite(
+            id = invite.group.id,
+            groupId = invite.group.id,
+            groupName = invite.group.name,
+            inviterName = invite.inviterName.ifBlank { fallbackInviter },
+            memberCount = invite.group.members.size,
+            payloadJson = gson.toJson(invite)
+        )
+        _pendingInvites.value = _pendingInvites.value.filterNot { it.id == pending.id } + pending
+        return pending
+    }
+
+    fun acceptPendingInvite(context: Context, inviteId: String, myNickname: String): Result<P2PGroup> {
+        val pending = _pendingInvites.value.firstOrNull { it.id == inviteId }
+            ?: return Result.failure(IllegalArgumentException("招待が見つかりません"))
+        _pendingInvites.value = _pendingInvites.value.filterNot { it.id == inviteId }
+        return runCatching { gson.fromJson(pending.payloadJson, GroupInvitePayload::class.java) }
+            .fold(
+                onSuccess = { joinFromInvite(context, it, myNickname) },
+                onFailure = { Result.failure(IllegalArgumentException("招待データを解析できませんでした")) }
+            )
+    }
+
+    fun declinePendingInvite(inviteId: String) {
+        _pendingInvites.value = _pendingInvites.value.filterNot { it.id == inviteId }
+    }
+
+    /**
+     * Joins a P2P group from an invite link or raw invite code (explicit user action).
      */
     fun joinGroupFromInviteCode(
         context: Context,
         rawInvite: String,
         myNickname: String
     ): Result<P2PGroup> {
+        val invite = try {
+            parseInvite(rawInvite)
+        } catch (e: Exception) {
+            return Result.failure(IllegalArgumentException("招待コードが無効です: ${e.message}"))
+        }
+        _pendingInvites.value = _pendingInvites.value.filterNot { it.id == invite.group.id }
+        return joinFromInvite(context, invite, myNickname)
+    }
+
+    private fun joinFromInvite(
+        context: Context,
+        invite: GroupInvitePayload,
+        myNickname: String
+    ): Result<P2PGroup> {
         val appCtx = context.applicationContext
         return try {
-            val trimmed = rawInvite.trim()
-            val encoded = when {
-                trimmed.startsWith("nemix://group", ignoreCase = true) -> {
-                    Uri.parse(trimmed).getQueryParameter("d") ?: return Result.failure(
-                        IllegalArgumentException("招待リンクの形式が不正です")
-                    )
-                }
-                else -> trimmed
-            }
-            val json = String(
-                Base64.decode(encoded, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
-                StandardCharsets.UTF_8
-            )
-            val invite = gson.fromJson(json, GroupInvitePayload::class.java)
-                ?: return Result.failure(IllegalArgumentException("招待データを解析できませんでした"))
-
             val incomingGroup = invite.group
             if (incomingGroup.id.isBlank() || incomingGroup.groupKeyBase64.isBlank()) {
                 return Result.failure(IllegalArgumentException("グループ暗号鍵が含まれていません"))
@@ -804,6 +887,12 @@ object P2PGroupManager {
                 val incoming = invite.group
                 if (incoming.id.isBlank() || incoming.groupKeyBase64.isBlank()) return
 
+                // Not a member yet: ask the user instead of joining automatically.
+                if (_groups.value.none { it.id == incoming.id }) {
+                    addPendingInvite(invite, senderNickname)
+                    return
+                }
+
                 val myNick = com.bitchat.android.services.AppStateStore.nickname.value.ifBlank { "nemix" }
                 val me = myMemberIdentity(appCtx, myNick)
                 registerMemberIdentities(appCtx, incoming.members, me.id)
@@ -1014,8 +1103,8 @@ object P2PGroupManager {
         group: P2PGroup,
         peerTarget: String,
         inviterNickname: String
-    ) {
-        try {
+    ): MessageRouter.RouteResult {
+        return try {
             val payload = GroupInvitePayload(group = group, inviterName = inviterNickname)
             val b64 = Base64.encodeToString(
                 gson.toJson(payload).toByteArray(StandardCharsets.UTF_8),
@@ -1032,6 +1121,7 @@ object P2PGroupManager {
             )
         } catch (e: Exception) {
             Log.w(TAG, "Failed to send direct group invite: ${e.message}")
+            MessageRouter.RouteResult.DROPPED
         }
     }
 

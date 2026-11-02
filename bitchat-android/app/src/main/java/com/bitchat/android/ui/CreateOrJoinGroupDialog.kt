@@ -195,7 +195,7 @@ fun CreateOrJoinGroupDialog(
                     }
                 } else {
                     Text(
-                        text = "相手から受け取ったP2Pグループ招待コード (nemix://group?d=...) を貼り付けてください。中央サーバーを使わずに直接グループ暗号鍵を共有して参加します。",
+                        text = "相手から受け取ったP2Pグループの招待リンク (https://nemi-x.com/g#...) を貼り付けてください。中央サーバーを使わずに直接グループ暗号鍵を共有して参加します。",
                         fontSize = 12.sp,
                         lineHeight = 18.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -204,7 +204,7 @@ fun CreateOrJoinGroupDialog(
                         value = inviteCodeInput,
                         onValueChange = { inviteCodeInput = it },
                         label = { Text("P2P招待コード") },
-                        placeholder = { Text("nemix://group?d=...") },
+                        placeholder = { Text("https://nemi-x.com/g#...") },
                         maxLines = 4,
                         modifier = Modifier.fillMaxWidth()
                     )

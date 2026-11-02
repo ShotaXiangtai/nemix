@@ -35,6 +35,7 @@ class NostrRelayManager private constructor() {
          */
         fun getInstance(context: android.content.Context): NostrRelayManager {
             shared.appContext = context.applicationContext
+            shared.ensureNetworkMonitor(context.applicationContext)
             return shared
         }
 
@@ -120,7 +121,70 @@ class NostrRelayManager private constructor() {
     private val powerManager: com.bitchat.android.mesh.PowerManager?
         get() = appContext?.let { com.bitchat.android.mesh.PowerManager.getInstance(it) }
     @Volatile private var appContext: android.content.Context? = null
-    
+
+    // ---- Network change handling ---------------------------------------------------------
+    // Reconnect backoff grows to minutes while the device is offline (airplane mode, mesh-only
+    // areas). Without this, coming back online could leave relays idle until the next backoff
+    // timer and chats looked stuck. A switch between networks (Wi-Fi <-> cellular) can also leave
+    // half-open sockets that only fail much later, so those are recycled right away.
+    private val networkMonitorRegistered = java.util.concurrent.atomic.AtomicBoolean(false)
+    @Volatile private var currentNetwork: android.net.Network? = null
+    @Volatile private var networkRecoveryJob: Job? = null
+
+    private fun ensureNetworkMonitor(context: android.content.Context) {
+        if (!networkMonitorRegistered.compareAndSet(false, true)) return
+        val cm = context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE)
+            as? android.net.ConnectivityManager ?: return
+        currentNetwork = cm.activeNetwork
+        runCatching {
+            cm.registerDefaultNetworkCallback(object : android.net.ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: android.net.Network) {
+                    val previous = currentNetwork
+                    currentNetwork = network
+                    onNetworkAvailable(switched = previous != null && previous != network)
+                }
+
+                override fun onLost(network: android.net.Network) {
+                    if (currentNetwork == network) currentNetwork = null
+                }
+            })
+        }.onFailure { error ->
+            networkMonitorRegistered.set(false)
+            Log.w(TAG, "Could not register network callback: " + error.message)
+        }
+    }
+
+    private fun onNetworkAvailable(switched: Boolean) {
+        networkRecoveryJob?.cancel()
+        networkRecoveryJob = scope.launch {
+            delay(1_500) // let DNS and routes settle after the change
+            if (!desiredConnected.get() ||
+                !com.bitchat.android.net.InternetRelayPreferences.isInternetEnabled()
+            ) return@launch
+            Log.i(TAG, if (switched) "Network switched: recycling relay connections" else "Network available: reconnecting relays now")
+            reconnectJobs.values.forEach(Job::cancel)
+            reconnectJobs.clear()
+            val targets = synchronized(relaysList) {
+                relaysList.forEach { relay ->
+                    relay.reconnectAttempts = 0
+                    relay.nextReconnectTime = null
+                }
+                relaysList.map { it.url }.filter { it in nonLiveRelayUrls }.toSet()
+            }
+            if (switched) {
+                targets.forEach { url ->
+                    // Removed first, so the close callback does not schedule a backoff reconnect.
+                    connections.remove(url)?.let { socket ->
+                        subscriptions.remove(url)
+                        updateRelayStatus(url, false)
+                        socket.close(1001, "Network changed")
+                    }
+                }
+            }
+            ensureConnectionsFor(targets, liveLocationToken = null)
+        }
+    }
+
     // OkHttp client for WebSocket connections (via provider to honor Tor)
     private val httpClient: OkHttpClient
         get() = com.bitchat.android.net.OkHttpProvider.webSocketClient()

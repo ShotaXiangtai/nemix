@@ -61,7 +61,7 @@ class NemixConnectionService : ConnectionService() {
 
 class NemixCallConnection(
     private val appContext: Context,
-    peerDisplayName: String,
+    private val peerDisplayName: String,
     isIncoming: Boolean
 ) : Connection() {
 
@@ -79,7 +79,9 @@ class NemixCallConnection(
     }
 
     override fun onShowIncomingCallUi() {
-        // Rendered inside nemix's WirelessCallOverlay
+        // Telecom asks a self-managed app to show its own incoming-call UI: a call-style
+        // notification with a full-screen intent (shows on the lock screen, turns the screen on).
+        IncomingCallNotifier.show(appContext, peerDisplayName)
     }
 
     override fun onAnswer() {

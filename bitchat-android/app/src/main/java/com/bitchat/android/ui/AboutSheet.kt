@@ -349,7 +349,7 @@ private fun SettingsActionRow(
 }
 
 /**
- * nemix About & Settings Sheet (Google Play Store compliant — zero sideload APK sharing)
+ * nemix About & Settings Sheet
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -423,16 +423,6 @@ fun AboutSheet(
                     // Header Section - App Identity
                     item(key = "hero") {
                         AboutHero(versionName = versionName ?: "")
-                    }
-
-                    if (com.bitchat.android.update.AppUpdater.isSupported) {
-                        item(key = "app_update") {
-                            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                                TextButton(onClick = { com.bitchat.android.update.AppUpdateController.checkNow(context) }) {
-                                    Text("アップデートを確認")
-                                }
-                            }
-                        }
                     }
 
                     item(key = "tabs") {
@@ -829,7 +819,7 @@ fun AboutSheet(
                             }
                         }
 
-                        // Security, Screenshot Protection, Legal, GitHub & Play Store Update Section
+                        // Security, Screenshot Protection, Legal, GitHub & update section
                         item(key = "security_and_legal") {
                             val appLockEnabled by AppLockManager.isEnabled.collectAsState()
                             val globalSsBlock by ChatSecurityPolicyManager.globalScreenshotBlocked.collectAsState()
@@ -916,7 +906,17 @@ fun AboutSheet(
                                             color = colorScheme.outlineVariant
                                         )
 
-                                        SettingsActionRow(
+                                        if (com.bitchat.android.update.AppUpdater.isSupported) {
+                                            // GitHub build: in-app updater (GitHub Releases, signature-checked)
+                                            SettingsActionRow(
+                                                icon = Icons.Filled.SystemUpdate,
+                                                title = "アップデートを確認",
+                                                subtitle = "GitHub の最新リリースを確認し、nemix の署名を確かめてから更新します（現在 v$versionName）",
+                                                onClick = {
+                                                    com.bitchat.android.update.AppUpdateController.checkNow(context)
+                                                }
+                                            )
+                                        } else SettingsActionRow(
                                             icon = Icons.Filled.SystemUpdate,
                                             title = "Google Play でアップデートを確認",
                                             subtitle = "アプリの更新は Google Play ストア経由で安全に提供されます",

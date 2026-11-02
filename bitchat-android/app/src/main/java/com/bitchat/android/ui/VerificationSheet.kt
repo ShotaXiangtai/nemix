@@ -210,7 +210,9 @@ fun VerificationSheet(
                     1 -> ScanTabContent(
                         accent = accent,
                         onScan = { code ->
-                            if (code.startsWith("nemix://group", ignoreCase = true)) {
+                            if (code.startsWith("nemix://group", ignoreCase = true) ||
+                                code.startsWith(P2PGroupManager.WEB_INVITE_PREFIX, ignoreCase = true)
+                            ) {
                                 P2PGroupManager.joinGroupFromInviteCode(context, code, nickname)
                                     .onSuccess { grp ->
                                         Toast.makeText(context, "P2Pグループ「${grp.name}」に参加しました", Toast.LENGTH_SHORT).show()

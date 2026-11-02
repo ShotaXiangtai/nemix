@@ -154,14 +154,42 @@ class MessageRouter private constructor(
     fun sendReadReceipt(receipt: ReadReceipt, toPeerID: String) {
         val resolution = ContactDirectory.resolve(toPeerID)
         val meshTarget = resolution.meshPeerID ?: toPeerID.takeIf { ContactIdentityResolver.isMeshPeerId(it) }
+        val nostrTarget = resolution.noiseKeyHex ?: toPeerID
         if (meshTarget != null && isReady(mesh, meshTarget)) {
             Log.d(TAG, "Routing READ via mesh to " + meshTarget.take(8) + "… id=" + receipt.originalMessageID.take(8) + "…")
             mesh.sendReadReceipt(receipt.originalMessageID, meshTarget, mesh.getPeerNicknames()[meshTarget] ?: mesh.myPeerID)
+        } else if (canSendViaNostr(nostrTarget)) {
+            // Peer is out of mesh range (or the chat moved to the internet): without this the
+            // sender never saw "read" after switching from offline to online.
+            Log.d(TAG, "Routing READ via Nostr to " + toPeerID.take(8) + "… id=" + receipt.originalMessageID.take(8) + "…")
+            nostr.sendReadReceipt(receipt, nostrTarget)
         }
     }
 
     fun sendDeliveryAck(messageID: String, toPeerID: String) {
-        // Mesh delivery ACKs are sent by the receiver automatically via mesh transports
+        // Mesh delivery ACKs are sent by the receiver automatically. Messages that arrived over
+        // Nostr (or from a geohash alias) need an explicit ACK back over Nostr, otherwise the
+        // sender's message stays at "sending" after an offline/online switch.
+        if (!com.bitchat.android.net.InternetRelayPreferences.isInternetEnabled() &&
+            !com.bitchat.android.net.InternetRelayPreferences.isMeshBridgeEnabled()
+        ) return
+        if (com.bitchat.android.nostr.GeohashAliasRegistry.contains(toPeerID)) {
+            val recipientHex = com.bitchat.android.nostr.GeohashAliasRegistry.get(toPeerID) ?: return
+            val identity = runCatching {
+                com.bitchat.android.nostr.NostrIdentityBridge.getCurrentNostrIdentity(context)
+            }.getOrNull() ?: return
+            nostr.sendDeliveryAckGeohash(messageID, recipientHex, identity)
+            return
+        }
+        val resolution = ContactDirectory.resolve(toPeerID)
+        val meshTarget = resolution.meshPeerID ?: toPeerID.takeIf { ContactIdentityResolver.isMeshPeerId(it) }
+        val meshSessionUp = meshTarget != null &&
+            mesh.getPeerInfo(meshTarget)?.isConnected == true &&
+            mesh.hasEstablishedSession(meshTarget)
+        val nostrTarget = resolution.noiseKeyHex ?: toPeerID
+        if (!meshSessionUp && canSendViaNostr(nostrTarget)) {
+            nostr.sendDeliveryAck(messageID, nostrTarget)
+        }
     }
 
     fun sendFavoriteNotification(toPeerID: String, isFavorite: Boolean) {
