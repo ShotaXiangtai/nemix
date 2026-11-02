@@ -183,22 +183,25 @@ class MediaSendingManager(
     ) {
         try {
             val filePacket = withContext(mediaWorkDispatcher) {
-                if (!java.io.File(filePath).exists()) {
+                val original = java.io.File(filePath)
+                if (!original.exists()) {
                     Log.e(TAG, "Image file does not exist")
                     return@withContext null
                 }
-                // Mesh (Bluetooth / Wi-Fi Aware) carries ~120 KB per transfer: shrink only for that
-                // route. Internet sends keep the sharper standard image.
-                val sendPath = if (willSendImageOverMesh(toPeerIDOrNull)) {
-                    com.bitchat.android.features.media.ImageUtils.fitForMesh(filePath) ?: filePath
-                } else {
-                    filePath
-                }
-                val file = java.io.File(sendPath)
-
-                if (rejectIfOversized(file, toPeerIDOrNull, channelOrNull)) {
+                if (rejectIfOversized(original, toPeerIDOrNull, channelOrNull)) {
                     return@withContext null
                 }
+                // Mesh (Bluetooth / Wi-Fi Aware) carries ~120 KB per transfer: shrink only for that
+                // route. Internet sends keep the sharper standard image. Never let this step
+                // abort the send.
+                val sendPath = runCatching {
+                    if (willSendImageOverMesh(toPeerIDOrNull)) {
+                        com.bitchat.android.features.media.ImageUtils.fitForMesh(filePath)
+                    } else {
+                        null
+                    }
+                }.getOrNull() ?: filePath
+                val file = java.io.File(sendPath)
 
                 BitchatFilePacket(
                     fileName = file.name,
