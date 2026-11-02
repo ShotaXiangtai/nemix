@@ -77,6 +77,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         // Installed before the first resign-active so the app-switcher snapshot
         // never captures an open conversation.
         PrivacyScreen.shared.install()
+        // nemix: background check of Nostr relays for new messages (no nemix server).
+        BackgroundInboxRefresh.register()
         return true
     }
 

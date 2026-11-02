@@ -204,6 +204,7 @@ final class AppRuntime: ObservableObject {
             TorManager.shared.goDormantOnBackground()
             chatViewModel.endGeohashSampling()
             NostrRelayManager.shared.disconnect()
+            BackgroundInboxRefresh.schedule()
             didEnterBackground = true
 
         case .active:

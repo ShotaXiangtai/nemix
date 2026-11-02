@@ -117,6 +117,10 @@ class MessageRouter private constructor(
     }
 
     fun sendPrivate(content: String, toPeerID: String, recipientNickname: String, messageID: String): RouteResult {
+        // Make sure people we message can see our name and icon (from any screen).
+        if (!com.bitchat.android.services.NemixProtocolInterceptor.isControlPacket(content)) {
+            com.bitchat.android.profile.UserProfileManager.syncProfileTo(context, toPeerID)
+        }
         val resolution = ContactDirectory.resolve(toPeerID)
         val conversationID = resolution.conversationID
         val meshTarget = resolution.meshPeerID ?: toPeerID.takeIf { ContactIdentityResolver.isMeshPeerId(it) }
@@ -460,6 +464,15 @@ class MessageRouter private constructor(
     fun onSessionEstablished(peerID: String) {
         resetRetry(peerID)
         flushOutboxFor(peerID)
+        // A contact came into mesh range: send our current name and icon if they lack it.
+        // Strangers nearby do not get the avatar automatically.
+        runCatching {
+            val noiseKey = mesh.getPeerInfo(peerID)?.noisePublicKey
+            val rel = noiseKey?.let { com.bitchat.android.favorites.FavoritesPersistenceService.shared.getFavoriteStatus(it) }
+            if (rel != null && (rel.isFavorite || rel.theyFavoritedUs)) {
+                com.bitchat.android.profile.UserProfileManager.syncProfileTo(context, peerID)
+            }
+        }
         val noiseHex = try {
             mesh.getPeerInfo(peerID)?.noisePublicKey?.let { ContactIdentityResolver.noiseKeyHex(it) }
         } catch (_: Exception) { null }

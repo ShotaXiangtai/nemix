@@ -46,8 +46,13 @@
 	<string>nemix uses the microphone while you record voice notes or hold live push-to-talk, then sends that audio to your selected mesh conversation.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>nemix lets you pick images from your photo library to share with nearby peers.</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>im.nemix.ios.inbox-refresh</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
+		<string>fetch</string>
 		<string>bluetooth-central</string>
 		<string>bluetooth-peripheral</string>
 	</array>

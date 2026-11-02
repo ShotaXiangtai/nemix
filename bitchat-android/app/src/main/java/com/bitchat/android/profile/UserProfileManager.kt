@@ -14,6 +14,7 @@ import com.bitchat.android.services.ContactDirectory
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.ByteArrayOutputStream
@@ -273,6 +274,42 @@ object UserProfileManager {
         return "$PROFILE_PACKET_PREFIX$json]"
     }
 
+    private val syncScope = kotlinx.coroutines.CoroutineScope(
+        kotlinx.coroutines.Dispatchers.IO + kotlinx.coroutines.SupervisorJob()
+    )
+
+    /**
+     * Sends our nickname + avatar to [peerID] if they don't have the current version yet.
+     * Called whenever we message someone and when a contact comes into mesh range, so it works
+     * from every screen (previously only the classic 1:1 chat screen synced profiles).
+     * Anonymous location-channel (geohash) DMs never receive the avatar.
+     */
+    fun syncProfileTo(context: Context, peerID: String) {
+        if (peerID.isBlank() || com.bitchat.android.nostr.GeohashAliasRegistry.contains(peerID)) return
+        val ctx = context.applicationContext
+        syncScope.launch {
+            val nickname = com.bitchat.android.services.AppStateStore.nickname.value
+            if (nickname.isBlank()) return@launch
+            val packet = buildSyncPacketIfNeeded(ctx, peerID, nickname) ?: return@launch
+            val route = runCatching {
+                val mesh = com.bitchat.android.service.MeshServiceHolder.getUnifiedOrCreate(ctx)
+                val name = ContactDirectory.resolve(peerID).displayName ?: peerID.take(8)
+                com.bitchat.android.services.MessageRouter.getInstance(ctx, mesh).sendPrivate(
+                    packet, peerID, name, java.util.UUID.randomUUID().toString().uppercase()
+                )
+            }.getOrNull()
+            // Not sent at all: allow a retry on the next opportunity instead of marking it synced.
+            if (route == null || route == com.bitchat.android.services.MessageRouter.RouteResult.DROPPED) {
+                forgetSync(peerID)
+            }
+        }
+    }
+
+    private fun forgetSync(peerID: String) {
+        val canonical = runCatching { ContactDirectory.canonicalConversationId(peerID) }.getOrDefault(peerID)
+        lastSyncedHashByPeer.remove(canonical)
+    }
+
     fun isProfileSyncPacket(content: String): Boolean =
         content.startsWith(PROFILE_PACKET_PREFIX) && content.endsWith("]")
 
@@ -325,6 +362,8 @@ object UserProfileManager {
                 }
             }
             _peerAvatars.value = current
+            // They shared their profile with us: share ours back if they don't have it yet.
+            senderPeerID?.takeIf { it.isNotBlank() }?.let { syncProfileTo(context, it) }
             true
         } catch (e: Exception) {
             Log.w(TAG, "Failed to parse profile packet: ${e.message}")
