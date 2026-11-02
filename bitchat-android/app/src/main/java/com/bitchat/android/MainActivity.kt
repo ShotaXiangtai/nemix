@@ -136,7 +136,10 @@ class MainActivity : OrientationAwareActivity() {
         com.bitchat.android.service.AppShutdownCoordinator.cancelPendingShutdown()
         
         // Enable edge-to-edge display for modern Android look
-        enableEdgeToEdge()
+        // Every top bar in the app is teal / dark, so the status bar always gets light icons.
+        enableEdgeToEdge(
+            statusBarStyle = androidx.activity.SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+        )
 
         // Initialize permission management
         permissionManager = PermissionManager(this)

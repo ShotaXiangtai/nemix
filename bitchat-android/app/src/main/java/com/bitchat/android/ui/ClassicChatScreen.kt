@@ -836,6 +836,9 @@ fun ClassicChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                // The scaffold already reserved the navigation bar; without this the
+                // composer pads for it a second time (big gap on 3-button-nav phones).
+                .consumeWindowInsets(paddingValues)
                 .background(chatWallpaper)
         ) {
             Column(modifier = Modifier.fillMaxSize()) {

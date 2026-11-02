@@ -214,6 +214,7 @@ fun P2PGroupScreen(
 
     val topBarBg = if (isChannelMode) channelModeHeaderBg else streamHeaderBg
     val topBarContentColor = if (isChannelMode && !isDark) Color(0xFF111214) else Color.White
+    com.bitchat.android.ui.theme.DarkStatusBarIcons(enabled = isChannelMode && !isDark)
 
     Scaffold(
         topBar = {
@@ -606,6 +607,7 @@ fun P2PGroupScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
+                    .consumeWindowInsets(paddingValues)
                     .background(if (isChannelMode) channelModeBodyBg else streamWallpaper)
             ) {
                 // Messages Feed
@@ -719,7 +721,7 @@ fun P2PGroupScreen(
                 // Group Message Composer
                 GroupMessageComposer(
                     text = inputText,
-                    placeholder = if (isChannelMode) "#${activeChannel.name} へメッセージを送信" else "グループメッセージを入力",
+                    placeholder = if (isChannelMode) "#${activeChannel.name} へ送信" else "メッセージ",
                     isChannelMode = isChannelMode,
                     isDark = isDark,
                     isLocating = isLocating,
@@ -1502,7 +1504,15 @@ private fun GroupMessageComposer(
                 TextField(
                     value = text,
                     onValueChange = onTextChange,
-                    placeholder = { Text(placeholder, color = iconColor, fontSize = 14.sp, maxLines = 1) },
+                    placeholder = {
+                        Text(
+                            placeholder,
+                            color = iconColor,
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                    },
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
                         unfocusedContainerColor = Color.Transparent,

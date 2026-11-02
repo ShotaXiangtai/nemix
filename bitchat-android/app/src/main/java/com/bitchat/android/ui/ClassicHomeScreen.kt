@@ -1146,7 +1146,8 @@ private fun ChatsTabContent(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 56.dp, start = 28.dp, end = 28.dp, bottom = 32.dp),
+                        // Bottom room so the floating new-chat button never covers the actions.
+                        .padding(top = 56.dp, start = 28.dp, end = 28.dp, bottom = 96.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1183,11 +1184,16 @@ private fun ChatsTabContent(
                             lineHeight = 18.sp
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        // Wraps to two lines on narrow screens instead of squeezing the labels.
+                        @OptIn(ExperimentalLayoutApi::class)
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             OutlinedButton(onClick = onOpenUuidSearch) {
                                 Icon(Icons.Filled.PersonSearch, null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("UUIDで友達追加", fontSize = 12.sp)
+                                Text("UUIDで友達追加", fontSize = 12.sp, maxLines = 1, softWrap = false)
                             }
                             Button(
                                 onClick = {
@@ -1201,7 +1207,12 @@ private fun ChatsTabContent(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text(if (nearbyVisible) "P2Pグループ作成" else "QRコード追加", fontSize = 12.sp)
+                                Text(
+                                    if (nearbyVisible) "P2Pグループ作成" else "QRコード追加",
+                                    fontSize = 12.sp,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
                             }
                         }
                     }

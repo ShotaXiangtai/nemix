@@ -1,21 +1,23 @@
 package com.bitchat.android.ui.theme
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import android.os.Build
-import android.view.View
-import android.view.WindowInsetsController
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
 // Classic-format Color Schemes for bitchat Messenger
 internal val DarkBitchatColorScheme = darkColorScheme(
@@ -86,19 +88,20 @@ fun BitchatTheme(
 
     val view = LocalView.current
     SideEffect {
-        (view.context as? Activity)?.window?.let { window ->
-            val topBarColor = if (shouldUseDark) ClassicColors.DarkTeal else ClassicColors.Teal
-            window.statusBarColor = topBarColor.toArgb()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // Light text/icons on dark teal / dark status bar
-                window.insetsController?.setSystemBarsAppearance(
-                    0,
-                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                )
-            } else {
-                @Suppress("DEPRECATION")
-                window.decorView.systemUiVisibility = 0
+        view.context.findActivity()?.window?.let { window ->
+            // Transparent: every screen draws its own header colour behind the status bar
+            // (teal home, blue stream group, grey channel group). A fixed colour here
+            // covered those on Android 9–14.
+            @Suppress("DEPRECATION")
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            // Light icons on the teal / dark top bars. Go through the compat controller:
+            // it works on every API level and, unlike overwriting systemUiVisibility,
+            // keeps the edge-to-edge layout flags intact.
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = false
+                isAppearanceLightNavigationBars = !shouldUseDark
             }
+            @Suppress("DEPRECATION")
             window.navigationBarColor = colorScheme.surface.toArgb()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 window.isNavigationBarContrastEnforced = false
@@ -113,4 +116,25 @@ fun BitchatTheme(
             content = content
         )
     }
+}
+
+/**
+ * Switches the status bar to dark icons while a screen with a light top bar is shown
+ * (e.g. the light channel-format header), and back to the app default when it leaves.
+ */
+@Composable
+fun DarkStatusBarIcons(enabled: Boolean) {
+    val view = LocalView.current
+    DisposableEffect(enabled) {
+        val controller = view.context.findActivity()?.window
+            ?.let { WindowCompat.getInsetsController(it, view) }
+        controller?.isAppearanceLightStatusBars = enabled
+        onDispose { controller?.isAppearanceLightStatusBars = false }
+    }
+}
+
+internal tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

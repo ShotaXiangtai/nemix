@@ -34,8 +34,8 @@ android {
         applicationId = "im.nemix.android"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 7
-        versionName = "0.1.6"
+        versionCode = 8
+        versionName = "0.1.7"
         buildConfigField(
             "String",
             "GITHUB_RELEASE_CERT_SHA256",
@@ -82,6 +82,12 @@ android {
             ndk {
                 // Include x86_64 for emulator support during development
                 abiFilters += listOf("arm64-v8a", "x86_64", "armeabi-v7a", "x86")
+            }
+            // Opt-in side-by-side install next to a signed release (keeps the release's data):
+            // ./gradlew assembleGithubDebug -PnemixDevSuffix
+            if (project.hasProperty("nemixDevSuffix")) {
+                applicationIdSuffix = ".dev"
+                versionNameSuffix = "-dev"
             }
         }
         release {
