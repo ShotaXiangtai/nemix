@@ -284,7 +284,7 @@ fun P2PGroupScreen(
                                 }
                             }
                             Text(
-                                text = "在 ${group.name}",
+                                text = group.name,
                                 color = topBarContentColor.copy(alpha = 0.72f),
                                 fontSize = 11.sp,
                                 maxLines = 1,

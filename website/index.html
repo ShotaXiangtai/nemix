@@ -181,36 +181,44 @@
           </div>
 
           <div id="previewChannelView" class="hidden">
-            <div class="gp-channel-layout">
-              <div class="gp-channel-rail">
-                <div class="gp-server-name">開発P2Pスペース</div>
-                <div class="gp-ch active"># 一般</div>
-                <div class="gp-ch"># お知らせ</div>
-                <div class="gp-ch"># 雑談・画像共有</div>
-                <div class="gp-ch"># 位置情報マップ</div>
+            <!-- Mirrors the app: group topic list (tap a topic to open its chat) -->
+            <div class="gp-header ch">
+              <div>
+                <strong>開発P2Pスペース</strong>
+                <span>12人のP2Pメンバー · チャンネル形式</span>
               </div>
-              <div class="gp-channel-main">
-                <div class="gp-header dc">
-                  <strong># 一般</strong>
-                  <span class="gp-badge dc">CHANNELS STYLE</span>
-                </div>
-                <div class="gp-dc-feed">
-                  <div class="gp-dc-item">
-                    <div class="gp-dc-av">S</div>
-                    <div>
-                      <div><strong>Shota</strong> <span class="gp-role">OWNER</span></div>
-                      <p>複数チャンネルとロール表示でコミュニティやプロジェクトを整理できます。通信はもちろん100% P2P！</p>
-                    </div>
-                  </div>
-                  <div class="gp-dc-item">
-                    <div class="gp-dc-av" style="background:#25D366;">A</div>
-                    <div>
-                      <div><strong>Aoi</strong> <span class="gp-role">MEMBER</span></div>
-                      <p>サーバーレスなのにカテゴリ・チャンネル分けで整理できるの最高！</p>
-                    </div>
-                  </div>
+              <span class="gp-badge ch">CHANNELS</span>
+            </div>
+            <div class="gp-topics">
+              <div class="gp-topic">
+                <div class="gp-topic-icon general">#</div>
+                <div class="gp-topic-body">
+                  <div class="gp-topic-top"><strong># 一般</strong><span>11/02</span></div>
+                  <p>Shota: 話題ごとにトピックを分けて整理できます</p>
                 </div>
               </div>
+              <div class="gp-topic">
+                <div class="gp-topic-icon">💬</div>
+                <div class="gp-topic-body">
+                  <div class="gp-topic-top"><strong>💬 お知らせ</strong><span>11/01</span></div>
+                  <p>Aoi: 次の集まりは土曜日の10時です</p>
+                </div>
+              </div>
+              <div class="gp-topic">
+                <div class="gp-topic-icon">💬</div>
+                <div class="gp-topic-body">
+                  <div class="gp-topic-top"><strong>💬 防災連絡</strong><span>10/30</span></div>
+                  <p>Kenji: 📍 位置情報</p>
+                </div>
+              </div>
+              <div class="gp-topic">
+                <div class="gp-topic-icon">💬</div>
+                <div class="gp-topic-body">
+                  <div class="gp-topic-top"><strong>💬 雑談・画像共有</strong><span>10/28</span></div>
+                  <p>Mika: 📷 画像</p>
+                </div>
+              </div>
+              <div class="gp-fab" aria-hidden="true">+</div>
             </div>
           </div>
         </div>
